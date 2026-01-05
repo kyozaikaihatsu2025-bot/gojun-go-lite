@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ | ホーム</title>
+
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c;
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; margin:0; }
+      body{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+        background:radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg) 60%),
+                   radial-gradient(800px 500px at 120% 10%, #fff 0%, var(--bg) 60%);
+        color:var(--text);
+      }
+      .frame{
+        width:min(780px, 100% - 32px);
+        background:var(--panel);
+        border-radius:28px;
+        border:2px solid var(--border);
+        box-shadow:0 18px 40px rgba(249,115,22,.2);
+        padding:24px 26px 22px;
+      }
+
+      .title-row{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:12px;
+        margin-bottom:4px;
+      }
+      .user-label{
+        font-size:16px;
+        font-weight:700;
+        color:var(--text);
+        white-space:nowrap;
+      }
+      .title{
+        text-align:center;
+        font-size:32px;
+        font-weight:900;
+        margin:0;
+        letter-spacing:.06em;
+        background:linear-gradient(90deg,var(--accent) 0%,#fb923c 40%,#f59e0b 100%);
+        -webkit-background-clip:text;
+        background-clip:text;
+        color:transparent;
+      }
+
+      /* ★差し替え：ユニット別コイン表示 */
+      .coins-wrap{
+        margin:10px auto 8px;
+        width:min(560px, 100%);
+        background:#fff;
+        border:2px solid #fed7aa;
+        border-radius:18px;
+        padding:10px 12px 12px;
+        box-shadow:0 8px 18px rgba(249,115,22,.10);
+      }
+      .coins-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:8px;
+        flex-wrap:wrap;
+        margin-bottom:8px;
+      }
+      .coins-title{
+        font-size:12px;
+        color:var(--muted);
+        font-weight:900;
+        letter-spacing:.08em;
+      }
+      .coins-note{
+        font-size:12px;
+        color:#b45309;
+        font-weight:900;
+        background:#fff7ed;
+        border:1px solid #fed7aa;
+        padding:4px 10px;
+        border-radius:999px;
+        white-space:nowrap;
+      }
+      .coins-grid{
+        display:grid;
+        grid-template-columns:repeat(4, 1fr);
+        gap:8px;
+      }
+      @media (max-width:560px){
+        .coins-grid{ grid-template-columns:repeat(2, 1fr); }
+      }
+      .coin-chip{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:8px;
+        border:2px solid #ffe0c2;
+        background:linear-gradient(180deg,#fff7ed 0%, #fff 70%);
+        border-radius:14px;
+        padding:10px 12px;
+      }
+      .coin-chip .u{
+        font-weight:1000;
+        color:#7c2d12;
+      }
+      .coin-chip .v{
+        font-weight:1000;
+        color:#92400e;
+        font-size:18px;
+      }
+
+      .subtitle{
+        text-align:center;
+        font-size:14px;
+        color:var(--muted);
+        margin-bottom:16px;
+      }
+
+      .table{
+        margin-top:12px;
+        border-top:1px solid #fed7aa;
+      }
+      .row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:10px 2px;
+        border-bottom:1px dashed #fed7aa;
+      }
+      .unit-name{
+        font-weight:700;
+        font-size:16px;
+      }
+      .btn-group{
+        display:flex;
+        gap:8px;
+      }
+
+      button{
+        font-family:inherit;
+        min-width:84px;
+        padding:6px 12px;
+        font-size:14px;
+        border-radius:999px;
+        border:2px solid #fed7aa;
+        cursor:pointer;
+        font-weight:700;
+        box-shadow:0 1px 2px rgba(0,0,0,.05);
+      }
+      .btn-practice{
+        background:#fff;
+        color:#b45309;
+      }
+      .btn-challenge{
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        border-color:#f97316;
+        color:#3b2314;
+      }
+      .btn-list-inline{
+        background:#fff;
+        color:#b45309;
+        min-width:80px;
+      }
+
+      .footer{
+        margin-top:14px;
+        text-align:center;
+        font-size:12px;
+        color:var(--muted);
+      }
+      .logout-btn{
+        margin-top:8px;
+        padding:4px 12px;
+        font-size:11px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#fff;
+        color:var(--muted);
+        cursor:pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="frame">
+      <div class="title-row">
+        <div id="userLabel" class="user-label"></div>
+        <h1 class="title">語順でGO！</h1>
+      </div>
+
+      <!-- ★差し替え：ユニット別コイン -->
+      <div class="coins-wrap" aria-label="ユニット別コイン">
+        <div class="coins-head">
+          <div class="coins-title">UNIT COINS</div>
+          <div class="coins-note">🪙 いまのコイン</div>
+        </div>
+        <div class="coins-grid" id="coinsGrid">
+          <!-- JSで作る -->
+        </div>
+      </div>
+
+      <div class="subtitle">あそぶ Unit とモードをえらぼう！</div>
+
+      <div class="table" id="unitTable"></div>
+
+      <div class="footer">
+        たくさん練習して語順をマスターしよう！！<br>
+        <button id="btnLogout" type="button" class="logout-btn">ログイン画面にもどる</button>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+
+      // ★ exec のベースURL（サーバー埋め込みを最優先 → 追従）
+      const EXEC_BASE = (() => {
+        const url = '<?= ScriptApp.getService().getUrl() ?>' || '';
+        const base = (url.split('?')[0] || '').trim();
+        const fallback = (() => {
+          try{
+            const u = new URL(window.location.href);
+            return u.origin + u.pathname;
+          }catch(e){
+            return window.location.href;
+          }
+        })();
+        const decided = base || sessionStorage.getItem(STORAGE_KEY_BASE) || fallback;
+        try{ sessionStorage.setItem(STORAGE_KEY_BASE, decided); }catch(e){}
+        return decided;
+      })();
+
+      const EMBED_TOKEN = '<?= typeof token !== "undefined" ? token : "" ?>';
+      let TOKEN = null;
+
+      // token 取得
+      const resolveToken = cb => {
+        if (EMBED_TOKEN){
+          TOKEN = EMBED_TOKEN;
+          cb();
+          return;
+        }
+
+        if (window.google && google.script && google.script.url){
+          google.script.url.getLocation(loc => {
+            TOKEN = (loc && loc.parameter && loc.parameter.t) ? String(loc.parameter.t) : '';
+            cb();
+          });
+          return;
+        }
+        const p = new URLSearchParams(location.search);
+        TOKEN = p.get('t') || '';
+        cb();
+      };
+
+      // ユニット表
+      const buildUnits = () => {
+        const table = document.getElementById('unitTable');
+        table.innerHTML = '';
+
+        for (let i = 1; i <= 8; i++){
+          const row = document.createElement('div');
+          row.className = 'row';
+
+          const name = document.createElement('div');
+          name.className = 'unit-name';
+          name.textContent = 'Unit ' + i;
+
+          const btns = document.createElement('div');
+          btns.className = 'btn-group';
+
+          const bList = document.createElement('button');
+          bList.className = 'btn-list-inline';
+          bList.textContent = '集中練習';
+          bList.addEventListener('click', () => goFocusList(i));
+          btns.appendChild(bList);
+
+          const bReview = document.createElement('button');
+          bReview.className = 'btn-practice';
+          bReview.textContent = '復習';
+          bReview.addEventListener('click', () => goReview(i));
+          btns.appendChild(bReview);
+
+          const bPractice = document.createElement('button');
+          bPractice.className = 'btn-practice';
+          bPractice.textContent = '練習';
+          bPractice.addEventListener('click', () => goGame(i,'practice'));
+          btns.appendChild(bPractice);
+
+          const bChallenge = document.createElement('button');
+          bChallenge.className = 'btn-challenge';
+          bChallenge.textContent = 'チャレンジ';
+          // ✅ チャレンジは challenge_menu に飛ばす
+          bChallenge.addEventListener('click', () => goChallengeMenu(i));
+          btns.appendChild(bChallenge);
+
+          row.appendChild(name);
+          row.appendChild(btns);
+          table.appendChild(row);
+        }
+      };
+
+      // 練習・チャレンジ（既存のまま残す：他で使ってても壊さないため）
+      const goGame = (unit, mode) => {
+        if (!TOKEN){
+          alert('ログイン情報が見つかりません。もう一度ログインしてね。');
+          return;
+        }
+        const page = (mode === 'practice') ? 'game_practice' : 'game_challenge';
+
+        const url =
+          EXEC_BASE
+          + '?page=' + encodeURIComponent(page)
+          + '&t='    + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(unit)
+          + '&mode=' + encodeURIComponent(mode);
+
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      };
+
+      // ✅ チャレンジメニューへ
+      const goChallengeMenu = unit => {
+        if (!TOKEN){
+          alert('ログイン情報が見つかりません。もう一度ログインしてね。');
+          return;
+        }
+        const url =
+          EXEC_BASE
+          + '?page=challenge_menu'
+          + '&t='    + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(unit);
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      };
+
+      // ✅ 復習ボタンは game_stamp に直行（既存どおり）
+      const goReview = unit => {
+        if (!TOKEN){
+          alert('ログイン情報が見つかりません。もう一度ログインしてね。');
+          return;
+        }
+        const url =
+          EXEC_BASE
+          + '?page=game_stamp'
+          + '&t='    + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(unit);
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      };
+
+      // 集中練習
+      const goFocusList = unit => {
+        if (!TOKEN){
+          alert('ログイン情報が見つかりません。もう一度ログインしてね。');
+          return;
+        }
+        const url =
+          EXEC_BASE
+          + '?page=game_focus'
+          + '&t='    + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(unit);
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      };
+
+      // ★ユニット別コイン表示（+ challenge_menu 用に sessionStorage へ保存）
+      const renderCoins = (coinsByUnit) => {
+        const grid = document.getElementById('coinsGrid');
+        grid.innerHTML = '';
+        for (let u = 1; u <= 8; u++){
+          const v = Number(coinsByUnit?.[u] || 0);
+          const chip = document.createElement('div');
+          chip.className = 'coin-chip';
+          chip.innerHTML = `<div class="u">Unit ${u}</div><div class="v">🪙 ${v}</div>`;
+          grid.appendChild(chip);
+        }
+      };
+
+      const cacheCoinsToSession = (coinsByUnit, unlockByUnit) => {
+        if (!TOKEN) return;
+        try{
+          for (let u = 1; u <= 8; u++){
+            const c = Number(coinsByUnit?.[u] || 0);
+            sessionStorage.setItem(`go_coin_${TOKEN}_u${u}`, String(c));
+            const ul = !!(unlockByUnit && unlockByUnit[u]);
+            sessionStorage.setItem(`go_unlockChallenge_${TOKEN}_u${u}`, ul ? '1' : '0');
+          }
+        }catch(e){}
+      };
+
+      // ★【追加（最小）】coinsByUnit / unlockByUnit をどんな形でも 1..8 のMapに正規化
+      // - 例1: {1:5,2:0,...}
+      // - 例2: {u1:5,u2:0,...}
+      // - 例3: [5,0,0,...] (0-index)
+      // - 例4: [null,5,0,...] (1-index)
+      const normalizeByUnit = (srcAny) => {
+        const out = {};
+        const src = srcAny || {};
+        const isArr = Array.isArray(src);
+
+        // 配列なら「1-indexっぽい」か「0-indexっぽい」かをざっくり判定
+        // length>=9 なら 1-indexの可能性が高いので u をそのまま
+        const arrIndex = (u) => {
+          if (!isArr) return null;
+          if (src.length >= 9) return u;     // [0, val1, val2 ...] っぽい
+          return u - 1;                      // [val1, val2 ...] っぽい
+        };
+
+        for (let u = 1; u <= 8; u++){
+          let v = 0;
+
+          if (isArr){
+            const idx = arrIndex(u);
+            v = Number(src[idx] || 0);
+          }else{
+            // 数字キー / 文字キー / u1形式を全部拾う
+            v =
+              Number(src[u] ?? 0) ||
+              Number(src[String(u)] ?? 0) ||
+              Number(src[`u${u}`] ?? 0) ||
+              0;
+          }
+          out[u] = Number.isFinite(v) ? v : 0;
+        }
+        return out;
+      };
+
+      // ★【追加（最小）】coin_uX / unlock_challenge_uX を拾う（フォールバック用）
+      const pickCoinsUnlock = (obj) => {
+        const coinsByUnit = {};
+        const unlockByUnit = {};
+        const src = obj || {};
+        for (let u = 1; u <= 8; u++){
+          coinsByUnit[u] = Number(src?.[`coin_u${u}`] || 0);
+          unlockByUnit[u] = !!src?.[`unlock_challenge_u${u}`];
+        }
+        return { coinsByUnit, unlockByUnit };
+      };
+
+      // ★ 名前表示（左のラベルは “ニックネーム” を最優先で元に戻す）＋コイン表示
+      const updateUserLabel = () => {
+        if (!TOKEN) return;
+        if (!(window.google && google.script && google.script.run)) return;
+
+        // ✅ 修正方針：A) getHomeStatus(token) を最優先（coinsByUnit を正で返す想定）
+        google.script.run
+          .withSuccessHandler(status => {
+            // --- 名前（勝手に消さない）：nickname 優先 ---
+            const nick =
+              status?.nickname ||
+              status?.student?.nickname ||
+              status?.name ||
+              status?.student?.name ||
+              status?.student_id ||
+              status?.student?.student_id ||
+              status?.studentId ||
+              status?.student?.studentId ||
+              '';
+
+            if (nick){
+              document.getElementById('userLabel').textContent = `${nick}さん`;
+            }
+
+            // --- コイン ---
+            // coinsByUnit があれば最優先（形は正規化してから使う）
+            if (status && status.coinsByUnit){
+              const coins = normalizeByUnit(status.coinsByUnit);
+              const unlock = status.unlockByUnit ? normalizeByUnit(status.unlockByUnit) : {};
+              renderCoins(coins);
+              cacheCoinsToSession(coins, unlock);
+              return;
+            }
+
+            // 念のため：status/student に coin_uX が入ってるケースも拾う
+            const baseObj = status?.student || status;
+            const picked = pickCoinsUnlock(baseObj);
+            renderCoins(picked.coinsByUnit);
+            cacheCoinsToSession(picked.coinsByUnit, picked.unlockByUnit);
+          })
+          .withFailureHandler(err => {
+            // ✅ 失敗時：既存どおり「表示は崩さない」で getStudentByToken にフォールバック
+            console.warn('getHomeStatus failed:', err);
+
+            google.script.run
+              .withSuccessHandler(stu => {
+                const nick = stu?.nickname || stu?.name || stu?.student_id || '';
+                if (nick){
+                  document.getElementById('userLabel').textContent = `${nick}さん`;
+                }
+                const picked = pickCoinsUnlock(stu);
+                renderCoins(picked.coinsByUnit);
+                cacheCoinsToSession(picked.coinsByUnit, picked.unlockByUnit);
+              })
+              .withFailureHandler(__err => {
+                console.warn('getStudentByToken failed:', __err);
+                const fallback = {};
+                for (let u = 1; u <= 8; u++) fallback[u] = 0;
+                renderCoins(fallback);
+              })
+              .getStudentByToken(TOKEN);
+          })
+          .getHomeStatus(TOKEN);
+      };
+
+      // ログイン画面に戻る
+      const goLoginPage = () => {
+        try{ window.top.location.href = EXEC_BASE; }
+        catch(_){ window.location.href = EXEC_BASE; }
+      };
+      document.getElementById('btnLogout').addEventListener('click', goLoginPage);
+
+      // ✅【追加（最小）】戻る/復帰でも最新を取りにいく（B）
+      const refreshHome = () => {
+        if (!TOKEN) return;
+        updateUserLabel();
+      };
+
+      window.addEventListener('load', () => {
+        resolveToken(() => {
+          buildUnits();
+
+          // 先に sessionStorage から仮表示（すぐ出る）
+          const coinsByUnit = {};
+          for (let u = 1; u <= 8; u++){
+            const v = Number(sessionStorage.getItem(`go_coin_${TOKEN}_u${u}`) || 0);
+            coinsByUnit[u] = Number.isFinite(v) ? v : 0;
+          }
+          renderCoins(coinsByUnit);
+
+          // そのあと GAS で最新化
+          updateUserLabel();
+
+          // ✅ 戻る/タブ復帰でも最新化（表示更新漏れ対策）
+          window.addEventListener('pageshow', (e) => {
+            if (e && e.persisted) refreshHome();
+          });
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) refreshHome();
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

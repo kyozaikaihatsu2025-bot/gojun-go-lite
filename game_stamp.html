@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ - スタンプラリー</title>
+
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c; --accent-100:#ffedd5;
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; margin:0; }
+      body{
+        margin:16px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+          "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+        color:var(--text);
+        background:radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg));
+      }
+      h1{
+        margin:0 0 8px;
+        font-size:1.4rem;
+      }
+      .subtitle{
+        font-size:.9rem;
+        color:var(--muted);
+        margin-bottom:16px;
+      }
+      .frame{
+        max-width:960px;
+        margin:0 auto;
+        background:var(--panel);
+        border:2px solid var(--border);
+        border-radius:16px;
+        padding:16px;
+        box-shadow:0 8px 20px rgba(0,0,0,.05);
+      }
+      .top-bar{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        margin-bottom:12px;
+        flex-wrap:wrap;
+      }
+      .home-btn{
+        border-radius:999px;
+        padding:8px 18px;
+        border:2px solid var(--border);
+        background:#fff;
+        font-size:.9rem;
+        cursor:pointer;
+        min-height:44px;
+      }
+      .home-btn:hover{
+        background:var(--accent-100);
+      }
+
+      .list{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        max-height:60vh;
+        overflow-y:auto;
+      }
+      .item-card{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        padding:12px 14px;
+        border-radius:14px;
+        border:1px solid var(--border);
+        background:#fff;
+      }
+      .item-main{
+        flex:1;
+      }
+      .item-prompt{
+        font-size:.95rem;
+        font-weight:600;
+        margin-bottom:4px;
+      }
+      .item-sub{
+        font-size:.8rem;
+        color:var(--muted);
+      }
+
+      .stamp-area{
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:14px;
+        min-width:230px;
+      }
+      .stamp-info{
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        gap:4px;
+      }
+      .stamp-actions{
+        display:flex;
+        align-items:center;
+      }
+
+      .stars-row{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:6px 14px;
+        border-radius:999px;
+        background:linear-gradient(135deg,#fef3c7,#facc15);
+        box-shadow:0 0 10px rgba(250,204,21,.7);
+      }
+      .stars-label{
+        font-size:.85rem;
+        font-weight:700;
+        color:#92400e;
+      }
+      .stars-text{
+        font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing:6px;
+        font-size:1.8rem;
+      }
+      .stamp-count{
+        font-size:.8rem;
+        color:var(--muted);
+      }
+      .clear-badge{
+        font-size:.85rem;
+        padding:4px 10px;
+        border-radius:999px;
+        background:linear-gradient(135deg,#fee2e2,#fb7185);
+        border:1px solid #fb7185;
+        box-shadow:0 0 8px rgba(248,113,113,.7);
+        color:#7f1d1d;
+        font-weight:700;
+      }
+
+      .mini-btn{
+        padding:10px 18px;
+        font-size:.9rem;
+        border-radius:999px;
+        border:none;
+        cursor:pointer;
+        background:linear-gradient(180deg,#fed7aa,#fb923c);
+        color:#3b2314;
+        font-weight:700;
+        min-width:190px;
+        min-height:48px;
+        box-shadow:0 4px 10px rgba(0,0,0,.15);
+      }
+      .mini-btn:hover{
+        filter:brightness(1.05);
+        transform:translateY(-1px);
+      }
+      .mini-btn:active{
+        transform:translateY(0);
+        box-shadow:0 2px 6px rgba(0,0,0,.18);
+      }
+
+      .empty{
+        padding:24px;
+        text-align:center;
+        font-size:.95rem;
+      }
+      .empty p{
+        margin:4px 0;
+      }
+      .btn{
+        padding:6px 14px;
+        border-radius:999px;
+        border:none;
+        cursor:pointer;
+        background:linear-gradient(180deg,#fed7aa,#fb923c);
+        font-size:.9rem;
+        font-weight:600;
+        color:#3b2314;
+      }
+
+      .modal-wrap{
+        position:fixed;
+        inset:0;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:50;
+      }
+      .hidden{ display:none; }
+      .backdrop{
+        position:absolute;
+        inset:0;
+        background:rgba(0,0,0,.25);
+      }
+      .modal{
+        position:relative;
+        max-width:640px;
+        width:92%;
+        background:#fff;
+        border-radius:18px;
+        border:2px solid var(--border);
+        padding:16px 14px 14px;
+        box-shadow:0 14px 35px rgba(0,0,0,.25);
+        z-index:1;
+      }
+      .modal-title{
+        font-size:1rem;
+        font-weight:700;
+        margin-bottom:4px;
+      }
+      .modal-subtitle{
+        font-size:.85rem;
+        color:var(--muted);
+        margin-bottom:10px;
+      }
+      .prompt-jp{
+        font-size:.9rem;
+        font-weight:600;
+        margin-bottom:6px;
+      }
+      .answer-area, .word-bank{
+        min-height:40px;
+        padding:8px;
+        border-radius:12px;
+        border:2px dashed var(--border);
+        background:var(--panel);
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        margin-bottom:8px;
+      }
+      .word-chip{
+        padding:4px 8px;
+        border-radius:999px;
+        background:#fff;
+        border:1px solid #fec89a;
+        font-size:.83rem;
+        cursor:pointer;
+      }
+      .word-chip:active{
+        transform:scale(.97);
+      }
+      .answer-label{
+        font-size:.75rem;
+        color:var(--muted);
+        margin-bottom:2px;
+      }
+      .check-row{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        margin-top:6px;
+        flex-wrap:wrap;
+      }
+      .left-buttons, .right-buttons{
+        display:flex;
+        gap:8px;
+      }
+      .btn-sub{
+        padding:4px 10px;
+        border-radius:999px;
+        border:1px solid var(--border);
+        background:#fff7ed;
+        font-size:.8rem;
+        cursor:pointer;
+      }
+      .btn-sub:hover{
+        background:#ffedd5;
+      }
+      .status-msg{
+        font-size:.85rem;
+      }
+      .status-ok{
+        color:#15803d;
+      }
+      .status-ng{
+        color:#b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="top-bar">
+        <div>
+          <h1>スタンプラリー ✨</h1>
+          <div class="subtitle">
+            これまで<span style="font-weight:700;">まちがえたことがある文</span>を、
+            ミニ復習してスタンプをためよう！
+          </div>
+        </div>
+        <button class="home-btn" id="homeBtn">メニューにもどる</button>
+      </div>
+
+      <div id="list" class="list"></div>
+    </div>
+
+    <div id="reviewModalWrap" class="modal-wrap hidden">
+      <div class="backdrop" id="modalBackdrop"></div>
+      <div class="modal">
+        <div class="modal-title">ミニ復習 🧠</div>
+        <div class="modal-subtitle">この一文だけ、practiceモードと同じようにやってみよう。</div>
+        <div id="modalPromptJp" class="prompt-jp"></div>
+
+        <div class="answer-label">ならべた英語</div>
+        <div id="answerArea" class="answer-area"></div>
+
+        <div class="answer-label">つかえることば</div>
+        <div id="wordBank" class="word-bank"></div>
+
+        <div class="check-row">
+          <div class="left-buttons">
+            <button id="checkBtn" class="btn">こたえをチェック</button>
+            <button id="resetBtn" class="btn-sub">やりなおす</button>
+          </div>
+          <div class="right-buttons">
+            <button id="closeBtn" class="btn-sub">とじる</button>
+          </div>
+        </div>
+        <div id="statusMsg" class="status-msg"></div>
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+      const EXEC_BASE = (() => {
+        const saved = sessionStorage.getItem(STORAGE_KEY_BASE);
+        if (saved) return saved;
+        try{
+          const u = new URL(window.location.href);
+          return u.origin + u.pathname;
+        }catch(e){
+          return window.location.href;
+        }
+      })();
+
+      const TOKEN = '<?= token ?>';
+      const UNIT  = '<?= typeof unit !== "undefined" ? unit : "" ?>';
+
+      let stampItems = [];
+
+      const listEl = document.getElementById('list');
+      const homeBtn = document.getElementById('homeBtn');
+
+      // ★ メニュー（review_menu）にもどる
+      homeBtn.addEventListener('click', () => {
+        const url =
+          EXEC_BASE
+          + '?page=review_menu'
+          + '&t='    + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(UNIT || '');
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      });
+
+      const modalWrap = document.getElementById('reviewModalWrap');
+      const modalBackdrop = document.getElementById('modalBackdrop');
+      const modalPromptJp = document.getElementById('modalPromptJp');
+      const answerArea = document.getElementById('answerArea');
+      const wordBank = document.getElementById('wordBank');
+      const checkBtn = document.getElementById('checkBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const closeBtn = document.getElementById('closeBtn');
+      const statusMsg = document.getElementById('statusMsg');
+
+      modalBackdrop.addEventListener('click', closeModal);
+      closeBtn.addEventListener('click', closeModal);
+      function closeModal(){
+        modalWrap.classList.add('hidden');
+      }
+
+      function calcStars(count) {
+        if (count >= 8) return 3;
+        if (count >= 5) return 2;
+        if (count >= 2) return 1;
+        return 0;
+      }
+
+      function renderList() {
+        listEl.innerHTML = '';
+
+        if (!stampItems.length) {
+          const div = document.createElement('div');
+          div.className = 'empty';
+          div.innerHTML = `
+            <p>まだスタンプラリーの対象になる文はないみたい。</p>
+            <p>まずは <strong>練習モード</strong> に取り組んでみよう！</p>
+          `;
+          listEl.appendChild(div);
+          return;
+        }
+
+        stampItems.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'item-card';
+
+          const main = document.createElement('div');
+          main.className = 'item-main';
+          const prompt = document.createElement('div');
+          prompt.className = 'item-prompt';
+          prompt.textContent = item.prompt || '（日本語が未設定です）';
+          const sub = document.createElement('div');
+          sub.className = 'item-sub';
+          sub.textContent = `これまでに ${item.wrongCount || 0} 回 まちがえたことがある文`;
+
+          main.appendChild(prompt);
+          main.appendChild(sub);
+
+          const stampArea = document.createElement('div');
+          stampArea.className = 'stamp-area';
+
+          const starsRow = document.createElement('div');
+          starsRow.className = 'stars-row';
+
+          const starsCnt = item.reviewCount || 0;
+          const numStars = calcStars(starsCnt);
+          const starPatterns = ['☆☆☆','★☆☆','★★☆','★★★'];
+          const starsText = starPatterns[numStars];
+
+          const starLabel = document.createElement('div');
+          starLabel.className = 'stars-label';
+          starLabel.textContent = 'スタンプ';
+
+          const starSpan = document.createElement('div');
+          starSpan.className = 'stars-text';
+          starSpan.textContent = starsText;
+
+          starsRow.appendChild(starLabel);
+          starsRow.appendChild(starSpan);
+
+          const countDiv = document.createElement('div');
+          countDiv.className = 'stamp-count';
+          countDiv.textContent = `スタンプ数：${starsCnt} 回（目標 8 回）`;
+
+          const stampInfo = document.createElement('div');
+          stampInfo.className = 'stamp-info';
+          stampInfo.appendChild(starsRow);
+          stampInfo.appendChild(countDiv);
+
+          if (numStars === 3) {
+            const clear = document.createElement('div');
+            clear.className = 'clear-badge';
+            clear.textContent = '✨クリア！✨';
+            stampInfo.appendChild(clear);
+          }
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'mini-btn';
+          btn.textContent = 'この文を復習する';
+
+          // ★ この文専用の game_review.html に飛ばす（既存どおり）
+          // ✅ 修正：unit を渡す（stamp正解 +1 が unit集計で反映される）
+          btn.addEventListener('click', () => {
+            const url =
+              EXEC_BASE
+              + '?page=game_review'
+              + '&t='   + encodeURIComponent(TOKEN)
+              + '&unit='+ encodeURIComponent(UNIT || '')
+              + '&id='  + encodeURIComponent(item.id)
+              + '&from=stamp';
+            try{ window.top.location.href = url; }
+            catch(_){ window.location.href = url; }
+          });
+
+          const actions = document.createElement('div');
+          actions.className = 'stamp-actions';
+          actions.appendChild(btn);
+
+          stampArea.appendChild(stampInfo);
+          stampArea.appendChild(actions);
+
+          card.appendChild(main);
+          card.appendChild(stampArea);
+
+          listEl.appendChild(card);
+        });
+      }
+
+      // ★★★ 名前パーソナライズ関数 ★★★
+      function applyNamePersonalization(item){
+        if (!item || typeof item !== 'object') return item;
+
+        const cloned = { ...item };
+
+        const rawKana = (cloned.full_name_kana || cloned.fullNameKana || '').trim();
+        if (cloned.prompt && typeof cloned.prompt === 'string' && rawKana && rawKana.includes(' ')) {
+          const firstKana = rawKana.split(' ')[0].trim();
+          if (firstKana) {
+            cloned.prompt = cloned.prompt.replace(/〇〇/g, firstKana);
+          }
+        }
+
+        const firstEn = (cloned.first_name_en || cloned.firstNameEn || '').trim();
+        const baseCorrect = (cloned.correct_sentence || cloned.correctSentence || '').trim();
+
+        if (baseCorrect === 'I am' && firstEn) {
+          const fullSentence = `I am ${firstEn}`;
+          cloned.correct_sentence = fullSentence;
+          if (cloned.correctSentence != null) {
+            cloned.correctSentence = fullSentence;
+          }
+
+          if (Array.isArray(cloned.words)) {
+            const w = cloned.words.map(v => String(v));
+            if (w.length === 2 && w[0] === 'I' && w[1] === 'am') {
+              cloned.words = ['I','am', firstEn];
+            }
+          }
+        }
+
+        return cloned;
+      }
+
+      function loadStampItems() {
+        listEl.innerHTML = '<div class="empty">読み込み中です…</div>';
+        google.script.run
+          .withSuccessHandler(res => {
+            const items = (res && res.items) || [];
+
+            stampItems = items
+              .map(it => {
+                const pItem = applyNamePersonalization(it);
+
+                const rawId = pItem.id ?? pItem.itemId ?? pItem.item_id ?? pItem.ID;
+                const numId = Number(rawId);
+                return {
+                  ...pItem,
+                  id: Number.isFinite(numId) ? numId : null,
+                  reviewCount: Number(pItem.reviewCount || 0)
+                };
+              })
+              .filter(it => it.id !== null);
+
+            renderList();
+          })
+          .withFailureHandler(err => {
+            console.error(err);
+            listEl.innerHTML = '<div class="empty">データの読み込みでエラーが起きました。</div>';
+          })
+          .getStampItems(TOKEN, UNIT);
+      }
+
+      loadStampItems();
+    </script>
+  </body>
+</html>

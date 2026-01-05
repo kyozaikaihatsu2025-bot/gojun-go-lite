@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ - チャレンジメニュー</title>
+
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c; --accent-100:#ffedd5;
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; margin:0; }
+      body{
+        margin:16px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+          "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+        color:var(--text);
+        background:
+          radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg) 60%),
+          radial-gradient(800px 500px at 120% 10%, #fff 0%, var(--bg) 60%);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      }
+
+      .frame{
+        width:min(760px, 100% - 16px);
+        background:var(--panel);
+        border:2px solid var(--border);
+        border-radius:22px;
+        padding:18px 18px 16px;
+        box-shadow:0 14px 35px rgba(249,115,22,.18);
+      }
+
+      .top{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-bottom:10px;
+      }
+      h1{
+        margin:0;
+        font-size:clamp(22px,3vw,34px);
+        font-weight:900;
+        letter-spacing:.04em;
+        background:linear-gradient(90deg,var(--accent) 0%,#fb923c 40%,#f59e0b 100%);
+        -webkit-background-clip:text;
+        background-clip:text;
+        color:transparent;
+      }
+      .tag{
+        padding:6px 12px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#fff;
+        font-weight:800;
+        color:#b45309;
+        white-space:nowrap;
+      }
+
+      .sub{
+        margin:6px 0 14px;
+        color:var(--muted);
+        font-size:14px;
+        line-height:1.5;
+      }
+
+      .cards{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:12px;
+      }
+      @media (min-width: 700px){
+        .cards{ grid-template-columns:1fr 1fr; }
+      }
+
+      .card{
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:18px;
+        padding:14px 14px 12px;
+        box-shadow:0 6px 16px rgba(0,0,0,.06);
+      }
+      .card-title{
+        font-size:18px;
+        font-weight:900;
+        margin:0 0 6px;
+      }
+      .card-desc{
+        margin:0 0 10px;
+        color:var(--muted);
+        font-size:13px;
+        line-height:1.5;
+      }
+
+      .lockinfo{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin:0 0 10px;
+        font-size:13px;
+        font-weight:900;
+        color:#92400e;
+        min-height:20px;
+      }
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        padding:4px 10px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#fff7ed;
+        white-space:nowrap;
+      }
+      .pill.ok{
+        border-color:#bbf7d0;
+        background:#dcfce7;
+        color:#14532d;
+      }
+      .pill.ng{
+        border-color:#fecaca;
+        background:#fee2e2;
+        color:#7f1d1d;
+      }
+
+      .btn{
+        width:100%;
+        min-height:52px;
+        border-radius:16px;
+        border:2px solid var(--border);
+        cursor:pointer;
+        font-weight:900;
+        font-size:16px;
+        box-shadow:0 4px 10px rgba(0,0,0,.10);
+        transition:transform .04s, box-shadow .15s, filter .15s;
+      }
+      .btn:hover{ box-shadow:0 10px 22px rgba(249,115,22,.18); }
+      .btn:active{ transform:translateY(1px); }
+
+      .btn:disabled{
+        cursor:not-allowed;
+        filter:grayscale(.25);
+        opacity:.65;
+        box-shadow:none;
+      }
+
+      .btn-primary{
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        border-color:#ffb777;
+        color:#3b2314;
+      }
+      .btn-boss{
+        background:linear-gradient(180deg,#fde68a 0%,#f59e0b 100%);
+        border-color:#f59e0b;
+        color:#3b2314;
+      }
+
+      .footer{
+        display:flex;
+        justify-content:center; /* ★復習ボタン撤去 → 中央寄せ */
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-top:14px;
+      }
+      .mini{
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#ffffffcc;
+        padding:10px 18px;
+        cursor:pointer;
+        font-weight:900;
+        color:#7c4a1d;
+        font-size:14px;
+      }
+      .mini:hover{ background:var(--accent-100); }
+
+      .warn{
+        margin-top:8px;
+        font-size:12px;
+        color:#b45309;
+        display:none;
+      }
+      .warn.show{ display:block; }
+
+      /* ===== 解放モーダル ===== */
+      .modal{
+        position:fixed;
+        inset:0;
+        z-index:200;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.25);
+      }
+      .modal.show{ display:flex; }
+      .modal-card{
+        width:min(360px, calc(100% - 40px));
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:18px;
+        padding:14px 14px 12px;
+        box-shadow:0 16px 40px rgba(0,0,0,.22);
+        text-align:center;
+      }
+      .modal-title{
+        font-size:18px;
+        font-weight:900;
+        margin:2px 0 6px;
+      }
+      .modal-text{
+        margin:0 0 12px;
+        color:var(--muted);
+        font-size:14px;
+        line-height:1.5;
+      }
+      .modal-btns{
+        display:flex;
+        gap:8px;
+      }
+      .modal-btns button{
+        width:100%;
+        min-height:46px;
+        border-radius:14px;
+        border:2px solid var(--border);
+        font-weight:900;
+        cursor:pointer;
+      }
+      .modal-btns .ok{
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        border-color:#ffb777;
+      }
+
+      /* ===== 演出 ===== */
+      .fx-layer{
+        position:fixed;
+        inset:0;
+        z-index:210;
+        pointer-events:none;
+        overflow:hidden;
+      }
+      .coin{
+        position:absolute;
+        width:18px;
+        height:18px;
+        border-radius:999px;
+        background:radial-gradient(circle at 30% 30%, #fff 0%, #fde68a 30%, #f59e0b 70%, #b45309 100%);
+        box-shadow:0 10px 18px rgba(0,0,0,.18);
+        animation:fly 700ms ease-out forwards;
+      }
+      @keyframes fly{
+        from{ transform:translate(var(--sx), var(--sy)) scale(1); opacity:1; }
+        to{ transform:translate(var(--tx), var(--ty)) scale(.6); opacity:0; }
+      }
+      .bigpop{
+        position:fixed;
+        inset:0;
+        z-index:220;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        pointer-events:none;
+      }
+      .bigpop.show{ display:flex; }
+      .bigpop-card{
+        background:#fff;
+        border:3px solid #fdba74;
+        border-radius:22px;
+        padding:18px 22px;
+        box-shadow:0 18px 50px rgba(249,115,22,.25);
+        text-align:center;
+        transform:scale(.9);
+        animation:pop .25s ease forwards;
+      }
+      .bigpop-title{
+        margin:0;
+        font-size:34px;
+        font-weight:900;
+        color:var(--accent-600);
+      }
+      .bigpop-sub{
+        margin:6px 0 0;
+        color:var(--muted);
+        font-weight:900;
+        font-size:14px;
+      }
+      @keyframes pop{ to{ transform:scale(1); } }
+    </style>
+  </head>
+
+  <body>
+    <div class="frame">
+      <div class="top">
+        <h1>チャレンジメニュー</h1>
+        <div id="unitTag" class="tag">Unit ?</div>
+      </div>
+
+      <div class="sub">
+        どっちで遊ぶ？<br>
+        「ボス討伐」は、解放するとチャレンジとして記録できる入口から入れるよ👑
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <!-- ★名前を自然に -->
+          <div class="card-title">1語いらないチャレンジ</div>
+          <p class="card-desc">
+            よけいな単語が1つまざってる！ひっかからずに、正しい文だけ作ろう🔥
+          </p>
+          <div class="lockinfo"><span class="pill ok">✅ いつでもOK</span></div>
+          <button id="btnExtra" class="btn btn-primary" type="button">はじめる</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">ボス討伐</div>
+          <p class="card-desc">
+            ボスに挑戦！解放すると、この入口から入って<strong>チャレンジとして記録</strong>されるよ👑
+          </p>
+          <div id="bossLockInfo" class="lockinfo"></div>
+          <button id="btnBoss" class="btn btn-boss" type="button">ボスへ</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button id="btnBackHome" class="mini" type="button">ホームにもどる</button>
+      </div>
+
+      <div id="warn" class="warn">⚠️ ログイン情報が見つかりません。もう一度ログインしてね。</div>
+    </div>
+
+    <!-- 解放確認モーダル（ボス用） -->
+    <div id="unlockModal" class="modal" aria-hidden="true">
+      <div class="modal-card">
+        <div id="mTitle" class="modal-title">🔓 ボス討伐を解放する？</div>
+        <div id="mText" class="modal-text">コインをつかって解放するよ。</div>
+        <div class="modal-btns">
+          <button id="mCancel" type="button">やめる</button>
+          <button id="mOk" class="ok" type="button">解放する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 演出レイヤ -->
+    <div id="fxLayer" class="fx-layer"></div>
+    <div id="bigPop" class="bigpop">
+      <div class="bigpop-card">
+        <p class="bigpop-title">🎉 アンロック！</p>
+        <p class="bigpop-sub">やったね！</p>
+      </div>
+    </div>
+
+    <script>
+      // ===== EXEC_BASE 自動追従 =====
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+      const EXEC_BASE = (() => {
+        const url = '<?= ScriptApp.getService().getUrl() ?>' || '';
+        const base = (url.split('?')[0] || '').trim();
+        const fallback = (() => {
+          try{
+            const u = new URL(window.location.href);
+            return u.origin + u.pathname;
+          }catch(e){
+            return window.location.href;
+          }
+        })();
+        const decided = base || sessionStorage.getItem(STORAGE_KEY_BASE) || fallback;
+        try{ sessionStorage.setItem(STORAGE_KEY_BASE, decided); }catch(e){}
+        return decided;
+      })();
+
+      const EMBED_TOKEN = '<?= typeof token !== "undefined" ? token : "" ?>';
+      const EMBED_UNIT  = '<?= typeof unit  !== "undefined" ? unit  : "" ?>';
+
+      let TOKEN = '';
+      let UNIT  = '';
+
+      function resolveParams(cb){
+        if (EMBED_TOKEN) TOKEN = String(EMBED_TOKEN);
+        if (EMBED_UNIT)  UNIT  = String(EMBED_UNIT);
+
+        const p = new URLSearchParams(location.search);
+        if (!TOKEN) TOKEN = p.get('t') || '';
+        if (!UNIT)  UNIT  = p.get('unit') || '';
+
+        if ((!TOKEN || !UNIT) && window.google && google.script && google.script.url){
+          google.script.url.getLocation(loc => {
+            const prm = (loc && loc.parameter) ? loc.parameter : {};
+            if (!TOKEN && prm.t) TOKEN = String(prm.t);
+            if (!UNIT  && prm.unit) UNIT = String(prm.unit);
+            cb();
+          });
+          return;
+        }
+        cb();
+      }
+
+      function showWarn(v){
+        const el = document.getElementById('warn');
+        if (!el) return;
+        el.classList.toggle('show', !!v);
+      }
+
+      function go(url){
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      }
+
+      function goHome(){
+        if (!TOKEN){ showWarn(true); return; }
+        go(EXEC_BASE + '?t=' + encodeURIComponent(TOKEN));
+      }
+
+      function goExtraChallenge(){
+        if (!TOKEN){ showWarn(true); return; }
+        go(
+          EXEC_BASE
+          + '?page=game_challenge'
+          + '&t=' + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(UNIT || '')
+          + '&mode=' + encodeURIComponent('challenge')
+        );
+      }
+
+      function goBossChallenge(){
+        if (!TOKEN){ showWarn(true); return; }
+        go(
+          EXEC_BASE
+          + '?page=game_boss'
+          + '&t=' + encodeURIComponent(TOKEN)
+          + '&unit=' + encodeURIComponent(UNIT || '')
+          + '&as=' + encodeURIComponent('challenge')
+        );
+      }
+
+      // =========================
+      // コインで「ボス討伐」を解放
+      // =========================
+      const BOSS_COST = 10; // ★ここを変えれば必要コインを調整できる
+
+      let menuStatus = {
+        coins: 0,
+        bossUnlocked: false
+      };
+
+      function unitNumber(){
+        const n = Number(UNIT);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function setUnitTag(){
+        const el = document.getElementById('unitTag');
+        if (!el) return;
+        const base = `Unit ${UNIT || '?'}`;
+        el.textContent = `${base} / 🪙 ${menuStatus.coins}`;
+      }
+
+      function readLocalStatus(){
+        // Homeで保存した sessionStorage を使う（GASがなくても最低限動く）
+        const u = unitNumber() || 0;
+        const c = Number(sessionStorage.getItem(`go_coin_${TOKEN}_u${u}`) || 0);
+        const unlocked = sessionStorage.getItem(`go_unlockChallenge_${TOKEN}_u${u}`) === '1';
+        menuStatus.coins = Number.isFinite(c) ? c : 0;
+        menuStatus.bossUnlocked = !!unlocked;
+      }
+
+      function renderBossLock(){
+        const info = document.getElementById('bossLockInfo');
+        const btn  = document.getElementById('btnBoss');
+        if (!info || !btn) return;
+
+        if (menuStatus.bossUnlocked){
+          info.innerHTML = `<span class="pill ok">✅ 解放済み</span>`;
+          btn.disabled = false;
+          return;
+        }
+
+        const coins = menuStatus.coins;
+        if (coins >= BOSS_COST){
+          info.innerHTML = `<span class="pill">🔒 ${BOSS_COST} 🪙 で解放できる</span>`;
+          btn.disabled = false; // 押したら解放モーダルへ
+        }else{
+          info.innerHTML = `<span class="pill ng">🔒 ${BOSS_COST} 🪙 必要（いま ${coins}）</span>`;
+          btn.disabled = true;  // ★ここで「押せない」を保証
+        }
+      }
+
+      function openUnlockModal(){
+        const m = document.getElementById('unlockModal');
+        const t = document.getElementById('mTitle');
+        const x = document.getElementById('mText');
+        if (t) t.textContent = `🔓 ボス討伐を解放する？`;
+        if (x) x.textContent = `コイン ${BOSS_COST} 枚つかって解放するよ 🪙`;
+        if (m) m.classList.add('show');
+      }
+
+      function closeUnlockModal(){
+        const m = document.getElementById('unlockModal');
+        if (m) m.classList.remove('show');
+      }
+
+      function playUnlockFx(){
+        try{ if (navigator.vibrate) navigator.vibrate([60,40,60]); }catch(e){}
+
+        // チャリン音（軽量）
+        try{
+          const ctx = new (window.AudioContext||window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(880, now);
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.35, now+0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+          o.connect(g).connect(ctx.destination);
+          o.start(now);
+          o.stop(now+0.2);
+        }catch(e){}
+
+        const fx = document.getElementById('fxLayer');
+        if (fx){
+          const N = 26;
+          for (let i=0;i<N;i++){
+            const c = document.createElement('div');
+            c.className = 'coin';
+            const sx = (Math.random()*window.innerWidth) | 0;
+            const sy = (window.innerHeight + 40 + Math.random()*120) | 0;
+            const tx = (window.innerWidth/2 + (Math.random()-0.5)*140) | 0;
+            const ty = (120 + Math.random()*140) | 0;
+
+            c.style.left = sx + 'px';
+            c.style.top  = sy + 'px';
+            c.style.setProperty('--sx', '0px');
+            c.style.setProperty('--sy', '0px');
+            c.style.setProperty('--tx', (tx - sx) + 'px');
+            c.style.setProperty('--ty', (ty - sy) + 'px');
+
+            fx.appendChild(c);
+            setTimeout(()=>c.remove(), 900);
+          }
+        }
+
+        const pop = document.getElementById('bigPop');
+        if (pop){
+          pop.classList.add('show');
+          setTimeout(()=>pop.classList.remove('show'), 900);
+        }
+      }
+
+      // GAS側 unlockByCoins がある前提（なくても画面は壊さない）
+      function doUnlockBoss(){
+        if (!TOKEN) return;
+
+        // 念のため、足りないなら止める
+        if (menuStatus.coins < BOSS_COST){
+          alert(`コインが足りないよ 🪙\n必要：${BOSS_COST}\nいま：${menuStatus.coins}`);
+          return;
+        }
+
+        // GASがあれば永続解放＋コイン消費
+        try{
+          if (!(window.google && google.script && google.script.run)){
+            alert('解放機能がまだ準備中です🙏（先生に言ってね）');
+            return;
+          }
+
+          google.script.run
+            .withSuccessHandler(s=>{
+              if (!s || s.ok !== true){
+                alert(s?.message || '解放できませんでした。');
+                return;
+              }
+
+              // 期待：{ok:true, coins:<残り>, bossUnlocked:true} を返す想定
+              menuStatus.coins = Number(s.coins ?? menuStatus.coins);
+              menuStatus.bossUnlocked = !!(s.bossUnlocked ?? true);
+
+              // sessionStorageも更新（Homeに戻らなくても反映）
+              try{
+                const u = unitNumber();
+                sessionStorage.setItem(`go_coin_${TOKEN}_u${u}`, String(menuStatus.coins));
+                sessionStorage.setItem(`go_unlockChallenge_${TOKEN}_u${u}`, menuStatus.bossUnlocked ? '1' : '0');
+              }catch(e){}
+
+              setUnitTag();
+              renderBossLock();
+
+              playUnlockFx();
+
+              setTimeout(()=>goBossChallenge(), 650);
+            })
+            .withFailureHandler(err=>{
+              alert('解放エラー: ' + (err?.message || err));
+            })
+            // ★featureKey は 'boss' 固定で送る（GAS側で判定しやすい）
+            .unlockByCoins(TOKEN, unitNumber(), 'boss');
+
+        }catch(e){
+          alert('解放機能がまだ準備中です🙏（GAS側の関数を追加してね）');
+        }
+      }
+
+      // もしGASに getChallengeMenuStatus があるなら、最新で上書き（なくてもOK）
+      function fetchMenuStatus(){
+        try{
+          if (!(window.google && google.script && google.script.run)) return;
+
+          google.script.run
+            .withSuccessHandler(s=>{
+              if (!s || s.ok !== true) return;
+              // 期待：{ok:true, coins:<unit coins>, bossUnlocked:<bool>} を返す想定
+              menuStatus.coins = Number(s.coins ?? menuStatus.coins);
+              menuStatus.bossUnlocked = !!(s.bossUnlocked ?? menuStatus.bossUnlocked);
+
+              // sessionStorage更新
+              try{
+                const u = unitNumber();
+                sessionStorage.setItem(`go_coin_${TOKEN}_u${u}`, String(menuStatus.coins));
+                sessionStorage.setItem(`go_unlockChallenge_${TOKEN}_u${u}`, menuStatus.bossUnlocked ? '1' : '0');
+              }catch(e){}
+
+              setUnitTag();
+              renderBossLock();
+            })
+            .withFailureHandler(_=>{})
+            .getChallengeMenuStatus(TOKEN, unitNumber());
+        }catch(e){}
+      }
+
+      window.addEventListener('load', () => {
+        resolveParams(() => {
+          if (!TOKEN){ showWarn(true); }
+
+          // まずローカルで即表示
+          readLocalStatus();
+          setUnitTag();
+          renderBossLock();
+
+          // ボタン
+          document.getElementById('btnBackHome').addEventListener('click', goHome);
+          document.getElementById('btnExtra').addEventListener('click', goExtraChallenge);
+
+          // ボス：未解放ならモーダル、解放済みなら突入
+          document.getElementById('btnBoss').addEventListener('click', () => {
+            if (!TOKEN){ showWarn(true); return; }
+            if (menuStatus.bossUnlocked){
+              goBossChallenge();
+              return;
+            }
+            if (menuStatus.coins < BOSS_COST){
+              // disabledで基本押せないけど、保険
+              alert(`コインが足りないよ 🪙\n必要：${BOSS_COST}\nいま：${menuStatus.coins}`);
+              return;
+            }
+            openUnlockModal();
+          });
+
+          // モーダル
+          document.getElementById('mCancel').addEventListener('click', closeUnlockModal);
+          document.getElementById('mOk').addEventListener('click', () => {
+            closeUnlockModal();
+            doUnlockBoss();
+          });
+
+          // GASがあるなら最新化
+          fetchMenuStatus();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ | ログイン</title>
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c;
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; margin:0; }
+      body{
+        display:flex; align-items:center; justify-content:center;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+        background:radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg) 60%),
+                   radial-gradient(800px 500px at 120% 10%, #fff 0%, var(--bg) 60%);
+        color:var(--text);
+      }
+      .card{
+        width: min(480px, 100% - 32px);
+        background:#fff;
+        border-radius:24px;
+        border:2px solid var(--border);
+        padding:24px 24px 20px;
+        box-shadow:0 12px 30px rgba(249,115,22,.15);
+      }
+      h1{
+        margin:0 0 8px;
+        font-size:28px;
+        text-align:center;
+        font-weight:800;
+        background:linear-gradient(90deg,var(--accent) 0%,#fb923c 40%,#f59e0b 100%);
+        -webkit-background-clip:text;
+        background-clip:text;
+        color:transparent;
+      }
+      .sub{
+        text-align:center;
+        font-size:14px;
+        color:var(--muted);
+        margin-bottom:16px;
+      }
+      label{
+        display:block;
+        font-size:15px;
+        margin:12px 0 4px;
+      }
+      input{
+        width:100%;
+        padding:10px 12px;
+        border-radius:12px;
+        border:1px solid #fed7aa;
+        font-size:16px;
+      }
+      input:focus{
+        outline:none;
+        box-shadow:0 0 0 2px #fed7aa;
+      }
+
+      /* オレンジの基本ボタン（全部これに統一） */
+      button{
+        width:100%;
+        margin-top:14px;
+        padding:12px 16px;
+        min-height:48px;
+        border-radius:999px;
+        border:2px solid #fdba74;
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        color:#3b2314;
+        font-weight:700;
+        font-size:16px;
+        cursor:pointer;
+      }
+      button:disabled{
+        opacity:.6;
+        cursor:default;
+      }
+
+      .msg{
+        margin-top:10px;
+        font-size:13px;
+        color:var(--muted);
+        min-height:1.2em;
+      }
+      .msg.error{ color:#b91c1c; }
+      .small{
+        margin-top:8px;
+        font-size:11px;
+        color:var(--muted);
+        text-align:center;
+      }
+      .hint-line{
+        font-size:11px;
+        color:var(--muted);
+        margin-top:4px;
+      }
+      .hidden{ display:none; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>語順でGO！</h1>
+      <div id="subLogin" class="sub">
+        ニックネームとパスワードを入れてね
+      </div>
+      <div id="subRegister" class="sub hidden">
+        はじめての人は 本名・ふりがな・ニックネーム・パスワードを入れてね
+      </div>
+
+      <!-- ▼ ログイン用フォーム ▼ -->
+      <div id="loginForm">
+        <label for="loginNickname">ニックネーム</label>
+        <input id="loginNickname" autocomplete="off" placeholder="例）りっきー" />
+
+        <label for="loginPass">パスワード（4ケタ）</label>
+        <input id="loginPass" type="password" inputmode="numeric" autocomplete="off" placeholder="例）0123" />
+
+        <button id="btnLogin">ログインする</button>
+        <button id="btnShowRegister" type="button">はじめてのゲーム（新規登録）</button>
+      </div>
+
+      <!-- ▼ 新規登録フォーム ▼ -->
+      <div id="registerForm" class="hidden">
+        <label for="regFullName">本名（フルネーム）</label>
+        <input id="regFullName" autocomplete="off" placeholder="例）田中 颯太" />
+        <div class="hint-line">
+          名字と なまえの あいだに、すきま（スペース）を１つ あけてね。例）田中 颯太
+        </div>
+
+        <label for="regFullNameKana">ふりがな（フルネーム）</label>
+        <input id="regFullNameKana" autocomplete="off" placeholder="例）たなか そうた" />
+        <div class="hint-line">
+          ふりがなも、みょうじ と なまえの あいだに すきまを１つ あけてね。例）たなか そうた
+        </div>
+
+        <label for="regNickname">ニックネーム（ゲームで使う名前）</label>
+        <input id="regNickname" autocomplete="off" placeholder="例）そうた1-1" />
+
+        <label for="regPass">パスワード（4ケタ）</label>
+        <input id="regPass" type="password" inputmode="numeric" autocomplete="off" placeholder="例）0948" />
+
+        <label for="regPass2">
+          パスワード（もう一度）
+          <span style="font-size:11px;color:var(--muted);">※ 入力まちがい防止</span>
+        </label>
+        <input id="regPass2" type="password" inputmode="numeric" autocomplete="off" placeholder="もう一度 0948" />
+
+        <button id="btnRegister" type="button">登録する</button>
+        <button id="btnBackLogin" type="button">ログイン画面にもどる</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+      <div class="small">
+        ※ 2回目以降は「ニックネーム」と「パスワード」だけでログインできます<br>
+        ※ アカウントを止めたいときは先生が <code>enabled</code> を <code>FALSE</code> にします
+      </div>
+    </div>
+
+    <script>
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+
+      // ★ exec 自動追従でホームへ
+      function goHome(token, serverBaseUrl){
+        const base =
+          serverBaseUrl
+          || sessionStorage.getItem(STORAGE_KEY_BASE)
+          || (() => {
+              try{
+                const u = new URL(window.location.href);
+                return u.origin + u.pathname;
+              }catch(e){
+                return window.location.href;
+              }
+            })();
+
+        const url = base + '?page=home&t=' + encodeURIComponent(token);
+
+        try{
+          window.top.location.href = url;
+        }catch(_){
+          window.location.href = url;
+        }
+      }
+
+      // ------- ここから DOM 読み込み後にまとめて処理 -------
+      window.addEventListener('load', () => {
+        const loginForm     = document.getElementById('loginForm');
+        const registerForm  = document.getElementById('registerForm');
+        const subLogin      = document.getElementById('subLogin');
+        const subRegister   = document.getElementById('subRegister');
+
+        const loginNicknameEl = document.getElementById('loginNickname');
+        const loginPassEl     = document.getElementById('loginPass');
+
+        const regFullNameEl      = document.getElementById('regFullName');
+        const regFullNameKanaEl  = document.getElementById('regFullNameKana');
+        const regNicknameEl      = document.getElementById('regNickname');
+        const regPassEl          = document.getElementById('regPass');
+        const regPass2El         = document.getElementById('regPass2');
+
+        const btnLogin       = document.getElementById('btnLogin');
+        const btnShowReg     = document.getElementById('btnShowRegister');
+        const btnRegister    = document.getElementById('btnRegister');
+        const btnBackLogin   = document.getElementById('btnBackLogin');
+        const msgEl          = document.getElementById('msg');
+
+        function setMessage(text, isError){
+          msgEl.textContent = text || '';
+          msgEl.className = 'msg' + (isError ? ' error' : '');
+        }
+
+        function disableButtons(disabled){
+          if (btnLogin)    btnLogin.disabled    = disabled;
+          if (btnRegister) btnRegister.disabled = disabled;
+        }
+
+        function showLoginView(){
+          loginForm.classList.remove('hidden');
+          subLogin.classList.remove('hidden');
+          registerForm.classList.add('hidden');
+          subRegister.classList.add('hidden');
+          setMessage('', false);
+          loginNicknameEl.focus();
+        }
+
+        function showRegisterView(){
+          loginForm.classList.add('hidden');
+          subLogin.classList.add('hidden');
+          registerForm.classList.remove('hidden');
+          subRegister.classList.remove('hidden');
+          setMessage('', false);
+          regFullNameEl.focus();
+        }
+
+        // ★ パスワード整形
+        //   1) 全角数字 → 半角
+        //   2) 0〜9 以外を全部削除
+        function normalizePin(raw){
+          const full = '０１２３４５６７８９';
+          const half = '0123456789';
+          let s = String(raw || '');
+
+          s = s.replace(/[０-９]/g, ch => {
+            const idx = full.indexOf(ch);
+            return idx >= 0 ? half[idx] : ch;
+          });
+
+          // 数字以外（スペース・改行・記号など）は全部削除
+          s = s.replace(/[^0-9]/g, '');
+
+          return s;
+        }
+
+        // ★ 本名・ふりがな用：スペースの整理
+        //   ・全角スペース → 半角スペース
+        //   ・前後の空白カット
+        //   ・スペースが連続していたら 1つにまとめる
+        function normalizeNameWithSpace(raw){
+          let s = String(raw || '');
+          // 全角スペースを半角に
+          s = s.replace(/\u3000/g, ' ');
+          // 前後の空白を削る
+          s = s.trim();
+          // 連続する空白文字をスペース1つに
+          s = s.replace(/\s+/g, ' ');
+          return s;
+        }
+
+        // 4ケタ数字チェック（ここに来るときはすでに数字だけ）
+        function validatePin4(pass){
+          return /^\d{4}$/.test(pass);
+        }
+
+        // ▼ 通常ログイン（ニックネーム＋4ケタ）
+        function onLogin(){
+          const nickname = loginNicknameEl.value.trim();
+          const pass     = normalizePin(loginPassEl.value);
+
+          if (!nickname || !pass){
+            setMessage('ニックネームとパスワードを入れてください。', true);
+            return;
+          }
+          if (!validatePin4(pass)){
+            setMessage('パスワードは数字4ケタで入れてね。例：0123', true);
+            return;
+          }
+
+          disableButtons(true);
+          setMessage('ログイン中…', false);
+
+          google.script.run
+            .withSuccessHandler(res => {
+              disableButtons(false);
+              if (!res || !res.token){
+                setMessage('トークンの発行に失敗しました。先生に知らせてください。', true);
+                return;
+              }
+              if (res.baseUrl){
+                sessionStorage.setItem(STORAGE_KEY_BASE, res.baseUrl);
+              }
+              setMessage('', false);
+              goHome(res.token, res.baseUrl);
+            })
+            .withFailureHandler(err => {
+              disableButtons(false);
+              const msg = (err && err.message) ? err.message : 'ログインに失敗しました。';
+              setMessage(msg, true);
+            })
+            // mode, nickname, fullName, fullNameKana, password
+            .createSession('login', nickname, '', '', pass);
+        }
+
+        // ▼ 新規登録（本名＋ふりがな＋ニックネーム＋4ケタ）
+        function onRegister(){
+          // 入力値をいったん整形
+          const fullNameNorm     = normalizeNameWithSpace(regFullNameEl.value);
+          const fullNameKanaNorm = normalizeNameWithSpace(regFullNameKanaEl.value);
+
+          // 整形した文字列を入力欄にも反映（子どもが目で確認できるように）
+          regFullNameEl.value     = fullNameNorm;
+          regFullNameKanaEl.value = fullNameKanaNorm;
+
+          const fullName     = fullNameNorm;
+          const fullNameKana = fullNameKanaNorm;
+          const nickname     = regNicknameEl.value.trim();
+          const pass         = normalizePin(regPassEl.value);
+          const pass2        = normalizePin(regPass2El.value);
+
+          if (!fullName || !fullNameKana || !nickname || !pass || !pass2){
+            setMessage('本名・ふりがな・ニックネーム・パスワードを全部入れてください。', true);
+            return;
+          }
+
+          // 名字と名前のあいだのスペースチェック（本名）
+          if (!fullName.includes(' ')){
+            setMessage('本名は「名字 と なまえ」のあいだに すきまを１つあけてね。例）田中 颯太', true);
+            return;
+          }
+
+          // 名字と名前のあいだのスペースチェック（ふりがな）
+          if (!fullNameKana.includes(' ')){
+            setMessage('ふりがなは「みょうじ と なまえ」のあいだに すきまを１つあけてね。例）たなか そうた', true);
+            return;
+          }
+
+          if (!validatePin4(pass)){
+            setMessage('パスワードは数字4ケタで入れてね。例：0123', true);
+            return;
+          }
+          if (pass !== pass2){
+            setMessage('パスワードが2回とも同じになるように入力してください。', true);
+            return;
+          }
+
+          disableButtons(true);
+          setMessage('アカウントを作成しています…', false);
+
+          google.script.run
+            .withSuccessHandler(res => {
+              disableButtons(false);
+              if (!res || !res.token){
+                setMessage('トークンの発行に失敗しました。先生に知らせてください。', true);
+                return;
+              }
+              if (res.baseUrl){
+                sessionStorage.setItem(STORAGE_KEY_BASE, res.baseUrl);
+              }
+              setMessage('アカウントを作成しました。ゲームに入ります。', false);
+              goHome(res.token, res.baseUrl);
+            })
+            .withFailureHandler(err => {
+              disableButtons(false);
+              const msg = (err && err.message) ? err.message : '新規登録に失敗しました。';
+              setMessage(msg, true);
+            })
+            // ★ Code.gs: createSession('register', nickname, fullName, fullNameKana, pass)
+            .createSession('register', nickname, fullName, fullNameKana, pass);
+        }
+
+        // ▼ イベント設定
+        if (btnLogin)     btnLogin.addEventListener('click', onLogin);
+        if (btnShowReg)   btnShowReg.addEventListener('click', showRegisterView);
+        if (btnRegister)  btnRegister.addEventListener('click', onRegister);
+        if (btnBackLogin) btnBackLogin.addEventListener('click', showLoginView);
+
+        // Enterキーの動き
+        loginNicknameEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') loginPassEl.focus();
+        });
+        loginPassEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') onLogin();
+        });
+
+        regFullNameEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') regFullNameKanaEl.focus();
+        });
+        regFullNameKanaEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') regNicknameEl.focus();
+        });
+        regNicknameEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') regPassEl.focus();
+        });
+        regPassEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') regPass2El.focus();
+        });
+        regPass2El.addEventListener('keydown', e => {
+          if (e.key === 'Enter') onRegister();
+        });
+
+        // 初期表示はログイン画面
+        showLoginView();
+      });
+      // ------- ここまで onload 内 -------
+    </script>
+  </body>
+</html>

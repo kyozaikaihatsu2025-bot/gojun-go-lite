@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ - チャレンジモード</title>
+
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c; --accent-100:#ffedd5;
+      }
+      *{ box-sizing:border-box; } html,body{ height:100%; }
+      body{
+        margin:16px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+        color:var(--text);
+        background:radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg) 60%),
+                   radial-gradient(800px 500px at 120% 10%, #fff 0%, var(--bg) 60%);
+      }
+
+      main{ max-width:100%; }
+      .main-left{ max-width:100%; }
+
+      .header{ display:grid; gap:8px; margin-bottom:14px; }
+
+      .titleRow{
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:12px;
+      }
+      h1{
+        margin:0; font-size:clamp(22px,3vw,40px); font-weight:800; letter-spacing:.5px;
+        background:linear-gradient(90deg,var(--accent) 0%,#fb923c 40%,#f59e0b 100%);
+        -webkit-background-clip:text; background-clip:text; color:transparent;
+      }
+      .modeTag{
+        font-size:clamp(14px,2.3vw,18px);
+        font-weight:700;
+        padding:4px 10px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#fff7ed;
+        color:#b45309;
+      }
+      .btn-ghost{
+        padding:6px 12px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#ffffffcc;
+        font-size:13px;
+        font-weight:600;
+        cursor:pointer;
+      }
+      .btn-ghost:hover{
+        box-shadow:0 3px 8px rgba(249,115,22,.18);
+      }
+
+      .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+      button{
+        padding:8px 14px; border-radius:12px; border:2px solid var(--border);
+        background:linear-gradient(180deg,#ffe8d6 0%,#ffd9b5 100%);
+        color:var(--text); font-weight:700; cursor:pointer;
+        box-shadow:0 1px 0 rgba(0,0,0,.03); transition:transform .03s, box-shadow .15s, opacity .15s;
+      }
+      button:hover{ box-shadow:0 6px 14px rgba(249,115,22,.18); }
+      button:active{ transform:translateY(1px); }
+      button:disabled{
+        opacity:.55;
+        cursor:not-allowed;
+        box-shadow:none;
+        transform:none;
+      }
+      .btn-primary{
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        border-color:#ffb777; color:#3b2314;
+      }
+
+      .statusBar{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        align-items:center;
+        justify-content:flex-end;
+        font-size:14px;
+        color:var(--muted);
+      }
+      .statusBadge{
+        padding:6px 12px;
+        border-radius:999px;
+        background:#fff;
+        border:1px solid #ffd7b8;
+        font-weight:600;
+      }
+
+      .prompt{
+        margin:10px 0 14px;
+        padding:10px 14px;
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:12px;
+        display:inline-block;
+        max-width:100%;
+      }
+
+      h2{ margin:14px 0 8px; font-size:16px; color:var(--accent-600); }
+
+      .answerRow{ display:flex; align-items:center; gap:10px; }
+
+      .slots,.words{
+        display:inline-flex;
+        flex-wrap:wrap;
+        gap:10px;
+        min-height:72px;
+        padding:10px;
+        background:#fff;
+        border:2px dashed var(--border);
+        border-radius:14px;
+        max-width:100%;
+      }
+
+      .slot,.word{
+        min-width:96px; min-height:52px; padding:10px 12px; border-radius:12px;
+        display:inline-flex; align-items:center; justify-content:center;
+        background:#fff; user-select:none; transition:box-shadow .15s, transform .05s, border-color .15s;
+      }
+      .slot{ border:2px dashed #ffcaa4; color:#9a8a7a; outline:none; }
+      .slot:hover{ border-color:#ffb37b; }
+      .slot:focus{ box-shadow:0 0 0 4px #ffd7b899; }
+      .word{ border:2px solid #ffb37b; background:linear-gradient(180deg,#fff6ee 0%,#ffe9d7 100%); color:#5a3a1a; cursor:grab; }
+      .word:active{ cursor:grabbing; transform:scale(.98); }
+      .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+      .punct{
+        min-width:44px; min-height:44px; padding:6px 10px; border-radius:999px;
+        display:none; align-items:center; justify-content:center; align-self:center;
+        border:2px solid #ffb37b; background:linear-gradient(180deg,#fff6ee 0%,#ffe9d7 100%);
+        font-weight:800;
+      }
+      .punct.show{ display:flex; }
+
+      .controls.bottom{ margin-top:12px; gap:10px; }
+
+      .result{ margin-top:10px; font-weight:800; padding:8px 12px; border-radius:10px; display:inline-block; }
+      .result.ok{ color:#0a3a1a; background:#dcfce7; border:2px solid #86efac; }
+      .result.ng{ color:#4a0a0a; background:#fee2e2; border:2px solid #fecaca; }
+
+      .celebrate{
+        position:fixed; inset:0; z-index:99; display:none; align-items:center; justify-content:center;
+        background: radial-gradient(1200px 800px at 50% -10%, rgba(255,255,255,.9) 0%, rgba(255,237,213,.85) 60%, rgba(255,223,186,.75) 100%);
+      }
+      .celebrate.show{ display:flex; }
+      .celebrate .card{
+        background:#fff; border:3px solid #ffd7b8; border-radius:24px; padding:26px 32px; text-align:center;
+        box-shadow:0 12px 30px rgba(249,115,22,.25); transform:scale(.9); animation:pop .4s ease forwards;
+      }
+      .celebrate .title{ font-size:44px; font-weight:900; color:#ea580c; margin:0 0 8px; }
+      .celebrate .sub{ font-size:16px; color:#8a6a4a; animation:blink 1s linear infinite; margin-bottom:8px; }
+      @keyframes pop { to{ transform:scale(1);} }
+      @keyframes blink { 0%,100%{ opacity:1;} 50%{ opacity:.3;} }
+
+      .celebrate.ng{
+        background: radial-gradient(1200px 800px at 50% -10%, rgba(255,255,255,.9) 0%, rgba(254,226,226,.88) 60%, rgba(252,165,165,.55) 100%);
+      }
+      .celebrate.ng .card{ border-color:#fecaca; box-shadow:0 12px 30px rgba(220,38,38,.18); }
+      .celebrate.ng .title{ color:#dc2626; }
+      .celebrate.ng .sub{ animation:none; }
+
+      canvas#confetti{ position:fixed; inset:0; z-index:98; pointer-events:none; }
+
+      .homeConfirm{
+        position:fixed;
+        inset:0;
+        z-index:120;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.25);
+      }
+      .homeConfirm.show{ display:flex; }
+      .homeConfirm-card{
+        background:#fff;
+        border-radius:20px;
+        border:2px solid var(--border);
+        padding:18px 20px;
+        max-width:320px;
+        width:calc(100% - 40px);
+        box-shadow:0 12px 30px rgba(0,0,0,.18);
+        text-align:center;
+      }
+      .homeConfirm-title{
+        font-weight:800;
+        font-size:18px;
+        margin-bottom:8px;
+      }
+      .homeConfirm-text{
+        font-size:14px;
+        color:var(--muted);
+        margin:0 0 14px;
+      }
+      .homeConfirm-buttons{
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+      }
+      .homeConfirm-buttons button{ width:100%; }
+    </style>
+  </head>
+
+  <body>
+    <header class="header">
+      <div class="titleRow">
+        <h1>語順でGO！</h1>
+        <span class="modeTag">チャレンジモード</span>
+        <button id="btnBackHome" class="btn-ghost" type="button">ホーム画面に戻る</button>
+      </div>
+      <div class="statusBar">
+        <div class="statusBadge">連続正解 <span id="streakVal">0</span> / 5</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="main-left">
+        <div id="prompt" class="prompt">読み込み中…</div>
+
+        <section>
+          <h2>答え</h2>
+          <div class="answerRow">
+            <div id="topSlots" class="slots"></div>
+          </div>
+          <div class="hint">※ 下のボックスをドラッグして、ここに<strong>テキストだけ</strong>を置きます。クリック／Enterでクリア。</div>
+        </section>
+
+        <section>
+          <h2>単語ボックス</h2>
+          <div id="bottomWords" class="words"></div>
+        </section>
+
+        <div class="controls bottom">
+          <button id="btnCheck" class="btn-primary">チェック</button>
+          <button id="btnReset">やり直し</button>
+        </div>
+
+        <div id="result" class="result" aria-live="polite"></div>
+      </div>
+
+      <audio id="audioOk"></audio>
+      <audio id="audioNg"></audio>
+
+      <canvas id="confetti"></canvas>
+
+      <div id="celebrate" class="celebrate" aria-hidden="true">
+        <div class="card">
+          <div class="title">🎉 正解！</div>
+          <div class="sub">つぎの問題へ…</div>
+        </div>
+      </div>
+
+      <div id="homeConfirm" class="homeConfirm" aria-hidden="true">
+        <div class="homeConfirm-card">
+          <div class="homeConfirm-title">ホームにもどる？</div>
+          <p class="homeConfirm-text">今のゲームデータをどうするかえらんでね。</p>
+          <div class="homeConfirm-buttons">
+            <button id="btnHomeReset" type="button">ゲームのデータをリセット</button>
+            <button id="btnHomeSave" type="button" class="btn-primary">ゲームデータを保存する</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // ★ EXEC_BASE（練習と同じ思想：保存→最優先で使う）
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+      const EXEC_BASE = (() => {
+        try{
+          const stored = sessionStorage.getItem(STORAGE_KEY_BASE) || '';
+          if (stored) return String(stored);
+        }catch(e){}
+
+        const url  = '<?= ScriptApp.getService().getUrl() ?>' || '';
+        const fallback = 'https://script.google.com/macros/s/AKfycbxTrGkbntRAFg77NtbM3AsDrGx3hLGG9g3Wxd3ozjwcX0Xux6xuPF36KAFNZ8yBYu_V/exec';
+        const base = (url.split('?')[0] || fallback);
+
+        try{ sessionStorage.setItem(STORAGE_KEY_BASE, base); }catch(e){}
+        return base;
+      })();
+      const BASE = EXEC_BASE;
+
+      const EMBED_TOKEN = '<?= typeof token !== "undefined" ? token : "" ?>';
+      const EMBED_UNIT  = '<?= typeof unit  !== "undefined" ? unit  : "" ?>';
+
+      const MODE = 'challenge';
+
+      let TOKEN = null;
+
+      // ★ unitは「文字列で保持」でもOK。ただしGASに渡す時は Number にする！
+      let UNIT = '1';
+
+      function resolveUnitFromUrl(){
+        const p = new URLSearchParams(location.search);
+        return p.get('unit') || '';
+      }
+
+      function normalizeUnit(u){
+        const n = Number(u);
+        return Number.isFinite(n) && n > 0 ? String(n) : '';
+      }
+
+      function resolveToken(cb){
+        // unit の初期は「テンプレ優先→URL」
+        UNIT = normalizeUnit(EMBED_UNIT) || normalizeUnit(resolveUnitFromUrl()) || '1';
+
+        if (EMBED_TOKEN) { TOKEN = EMBED_TOKEN; cb(); return; }
+
+        if (window.google && google.script && google.script.url){
+          google.script.url.getLocation(loc=>{
+            TOKEN = (loc && loc.parameter && loc.parameter.t) ? String(loc.parameter.t) : '';
+            // URLパラメータ unit もここで拾う（上書きOK）
+            if (loc && loc.parameter && loc.parameter.unit){
+              UNIT = normalizeUnit(loc.parameter.unit) || UNIT;
+            }
+            cb();
+          });
+        }else{
+          const p = new URLSearchParams(location.search);
+          TOKEN = p.get('t') || '';
+          UNIT  = normalizeUnit(p.get('unit')) || UNIT;
+          cb();
+        }
+      }
+
+      /* ★★★ チャレンジ専用 連続正解キー ★★★ */
+      const STREAK_KEY = ()=> TOKEN ? `go_challenge_streak_${TOKEN}` : 'go_challenge_streak_guest';
+
+      const getStreak = ()=>{
+        const raw = Number(sessionStorage.getItem(STREAK_KEY()) || 0);
+        if (!Number.isFinite(raw) || raw < 0) return 0;
+        return Math.min(raw, 5);
+      };
+
+      const setStreak = (v)=>{
+        const n = Number.isFinite(Number(v)) ? Number(v) : 0;
+        const capped = Math.min(Math.max(n, 0), 5);
+        sessionStorage.setItem(STREAK_KEY(), String(capped));
+        updateStreakDisplay(capped);
+      };
+
+      function updateStreakDisplay(v){
+        const el = document.getElementById('streakVal');
+        if (el) el.textContent = String(Math.min(Math.max(v, 0), 5));
+      }
+
+      const STATE_KEY = ()=> TOKEN ? `go_state_${TOKEN}` : null;
+
+      function saveStateForHome(){
+        const key = STATE_KEY();
+        if (!key || !current) return;
+        const slots = [...document.querySelectorAll('.slot')];
+        const arranged = slots.map(s => s.textContent.trim());
+
+        const data = { mode: MODE, id: current.id, arranged, unit: String(UNIT || '1') };
+        try{ sessionStorage.setItem(key, JSON.stringify(data)); }catch(e){}
+      }
+
+      function loadSavedState(){
+        const key = STATE_KEY();
+        if (!key) return null;
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        try{
+          const obj = JSON.parse(raw);
+          if (!obj || obj.mode !== MODE || !obj.id) return null;
+          if (String(obj.unit || '') && String(obj.unit) !== String(UNIT || '1')) return null;
+          return obj;
+        }catch(e){
+          return null;
+        }
+      }
+
+      function clearSavedState(){
+        const key = STATE_KEY();
+        if (!key) return;
+        sessionStorage.removeItem(key);
+      }
+
+      let current=null, totalCount=null, punctEl=null, draggingEl=null, busy=false;
+      let startAt = 0;
+
+      // ★ユニット内のID一覧（ここからだけ出題する）
+      let unitItemIds = [];
+      let usedIds = [];
+
+      let elapsedTimerId = null;
+      function startElapsedTimer(){ stopElapsedTimer(); elapsedTimerId=setInterval(()=>{},1000); }
+      function stopElapsedTimer(){ if(elapsedTimerId){ clearInterval(elapsedTimerId); elapsedTimerId=null; } }
+
+      // ✅ 修正：判定中は「チェック」と「やり直し」を両方触れない
+      function setBusy(v){
+        busy = v;
+        const btnCheck = document.getElementById('btnCheck');
+        const btnReset = document.getElementById('btnReset');
+        if (btnCheck) btnCheck.disabled = v;
+        if (btnReset) btnReset.disabled = v;
+      }
+
+      function applyNamePersonalization(item){
+        if (!item) return item;
+
+        const fullKana = (item.full_name_kana || '').trim();
+        const firstEn  = (item.first_name_en || '').trim();
+
+        if (item.prompt && fullKana.includes(' ')) {
+          const parts = fullKana.split(' ').filter(Boolean);
+          if (parts.length >= 2) {
+            const firstKana = parts[1];
+            if (firstKana) item.prompt = String(item.prompt).replace(/〇〇/g, firstKana);
+          }
+        }
+
+        if (firstEn) {
+          const base = (item.correct_sentence || '').trim();
+          if (base === 'I am') {
+            item.correct_sentence = `I am ${firstEn}`;
+            if (Array.isArray(item.words) && item.words.join(' ').trim() === 'I am') {
+              item.words = ['I','am', firstEn];
+            }
+          }
+        }
+        return item;
+      }
+
+      function sanitizeDummyAfterPersonalize(item){
+        if (!item) return item;
+        const dummy = (item.dummyWord || '').trim();
+        if (!dummy) return item;
+
+        const correctWords = Array.isArray(item.words) ? item.words : [];
+        const set = new Set(correctWords.map(w => String(w).toLowerCase()));
+        if (set.has(dummy.toLowerCase())) {
+          item.dummyWord = '';
+          item.wordsWithDummy = null;
+        }
+        return item;
+      }
+
+      let judgeTimer = null;
+
+      // ✅ 修正：表示時間を伸ばす（ここは関数自体はそのまま）
+      function showJudgeOverlay(isOk, subText, duration=1200, confettiMs=0, after){
+        const overlay = document.getElementById('celebrate');
+        if (!overlay) { if (after) after(); return; }
+
+        const btn1 = document.getElementById('btnBackLogin');
+        const btn2 = document.getElementById('btnBackHomeFinish');
+        if (btn1) btn1.remove();
+        if (btn2) btn2.remove();
+
+        const titleEl = overlay.querySelector('.title');
+        const subEl   = overlay.querySelector('.sub');
+
+        overlay.classList.remove('ng');
+        if (!isOk) overlay.classList.add('ng');
+
+        titleEl.textContent = isOk ? '✅ 正解！' : '❌ 不正解！';
+        subEl.textContent   = subText || '';
+
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden','false');
+
+        if (confettiMs > 0) runConfetti(confettiMs);
+
+        if (judgeTimer) clearTimeout(judgeTimer);
+        judgeTimer = setTimeout(()=>{
+          overlay.classList.remove('show');
+          overlay.setAttribute('aria-hidden','true');
+          if (after) after();
+        }, duration);
+      }
+
+      window.addEventListener('load', () => {
+        resolveToken(()=>{
+
+          if (getStreak() === 0) setStreak(0);
+          else updateStreakDisplay(getStreak());
+
+          const backHomeBtn = document.getElementById('btnBackHome');
+          if (backHomeBtn) backHomeBtn.addEventListener('click', openHomeConfirm);
+
+          const btnHomeReset = document.getElementById('btnHomeReset');
+          const btnHomeSave  = document.getElementById('btnHomeSave');
+          if (btnHomeReset) btnHomeReset.addEventListener('click', onHomeReset);
+          if (btnHomeSave)  btnHomeSave.addEventListener('click', onHomeSave);
+
+          document.getElementById('btnReset').addEventListener('click', ()=>{ if (!busy) buildUI(); });
+          document.getElementById('btnCheck').addEventListener('click', onCheck);
+
+          const unitNum = normalizeUnit(UNIT) ? Number(UNIT) : null;
+
+          google.script.run
+            .withSuccessHandler(ids => {
+              unitItemIds = Array.isArray(ids) ? ids.map(String).filter(Boolean) : [];
+
+              const savedState = loadSavedState();
+
+              google.script.run.withSuccessHandler(item => {
+                totalCount = unitItemIds.length || ((item && item.total) ? item.total : (totalCount || 100));
+
+                if (savedState && savedState.id){
+                  usedIds.push(String(savedState.id));
+                  loadById(savedState.id, savedState);
+                }else{
+                  loadRandom();
+                }
+              }).withFailureHandler(err=>{
+                showMessage('初期読み込みエラー: '+readErr(err), false, true);
+              }).getItemById(1, TOKEN);
+            })
+            .withFailureHandler(err => {
+              showMessage('ユニット一覧エラー: ' + readErr(err), false, true);
+            })
+            .listPracticeItemIds(unitNum);
+        });
+      });
+
+      function loadRandom(){
+        if (!Array.isArray(unitItemIds) || unitItemIds.length === 0){
+          showMessage('このユニットの問題がありません。先生が items_db を確認してね🙂', false, true);
+          setBusy(false);
+          return;
+        }
+
+        if (usedIds.length >= unitItemIds.length) usedIds = [];
+
+        let id = '';
+        let guard = 0;
+        do{
+          id = unitItemIds[Math.floor(Math.random() * unitItemIds.length)];
+          guard++;
+          if (guard > unitItemIds.length * 2) break;
+        }while(usedIds.includes(id));
+
+        if (id && !usedIds.includes(id)) usedIds.push(id);
+        loadById(id);
+      }
+
+      function fetchChallengeItemById(id, onOk, onNg){
+        const unitNum = normalizeUnit(UNIT) ? Number(UNIT) : null;
+
+        google.script.run
+          .withSuccessHandler(item=> onOk(item))
+          .withFailureHandler(_=>{
+            google.script.run
+              .withSuccessHandler(item=> onOk(item))
+              .withFailureHandler(err=> onNg(err))
+              .getItemById(id, TOKEN);
+          })
+          .getChallengeItemById(id, TOKEN, unitNum);
+      }
+
+      function loadById(id, savedState){
+        showMessage('読み込み中…', false);
+        setBusy(true); // ✅ 追加：次の問題が出るまで触れない
+
+        fetchChallengeItemById(
+          id,
+          (item)=>{
+            item = applyNamePersonalization(item);
+            item = sanitizeDummyAfterPersonalize(item);
+
+            current = item;
+
+            const pEl = document.getElementById('prompt');
+            if (pEl) pEl.textContent = item.prompt || '';
+
+            setAudio(item);
+            buildUI();
+
+            if (savedState && Array.isArray(savedState.arranged)){
+              restoreArrangement(savedState.arranged);
+            }
+
+            showMessage('', false);
+            startAt = Date.now();
+            startElapsedTimer();
+            setBusy(false); // ✅ ここで解除（読み込み完了後）
+          },
+          (err)=>{
+            showMessage('読み込みエラー: '+readErr(err), false, true);
+            setBusy(false);
+          }
+        );
+      }
+
+      function restoreArrangement(arranged){
+        const slots = [...document.querySelectorAll('.slot')];
+        const bottom = document.getElementById('bottomWords');
+        if (!slots.length || !bottom) return;
+
+        arranged.forEach((txt, idx)=>{
+          if (!txt || !slots[idx]) return;
+          const wordEl = [...bottom.querySelectorAll('.word')].find(w => w.textContent === txt);
+          if (wordEl){
+            slots[idx].textContent = txt;
+            wordEl.remove();
+          }else{
+            slots[idx].textContent = txt;
+          }
+        });
+        updatePunctPlacement();
+      }
+
+      function setAudio(item){
+        const ok=document.getElementById('audioOk'), ng=document.getElementById('audioNg');
+        ok.removeAttribute('src'); ng.removeAttribute('src');
+        if(item.audioOk) ok.src=item.audioOk;
+        if(item.audioNg) ng.src=item.audioNg;
+      }
+
+      function getWordsForBottomBox(){
+        if (!current) return [];
+        if (Array.isArray(current.wordsWithDummy) && current.wordsWithDummy.length) return current.wordsWithDummy;
+        const base = Array.isArray(current.words) ? current.words : [];
+        const dummy = (current.dummyWord || '').trim();
+        return dummy ? [...base, dummy] : base;
+      }
+
+      function buildUI(){
+        const top=document.getElementById('topSlots');
+        const bottom=document.getElementById('bottomWords');
+        top.innerHTML=''; bottom.innerHTML=''; punctEl=null;
+
+        if (!current || !Array.isArray(current.words)) return;
+
+        current.words.forEach(()=> {
+          const slot=document.createElement('div');
+          slot.className='slot'; slot.tabIndex=0;
+          slot.addEventListener('dragover', e=>e.preventDefault());
+          slot.addEventListener('drop', e=>{ onDropToSlot(e); });
+          slot.addEventListener('click', ()=>{ clearSlot(slot); });
+          slot.addEventListener('keydown', e=>{
+            if(['Enter','Backspace','Delete'].includes(e.key)) clearSlot(slot);
+          });
+          top.appendChild(slot);
+        });
+
+        punctEl=document.createElement('div');
+        punctEl.id='punct'; punctEl.className='punct';
+        punctEl.textContent=choosePunct(current.words);
+        top.appendChild(punctEl);
+        updatePunctPlacement();
+
+        const bottomWords = getWordsForBottomBox();
+        shuffle([...bottomWords]).forEach(w=> bottom.appendChild(createWordBox(w)));
+      }
+
+      function createWordBox(word){
+        const box=document.createElement('div');
+        box.className='word'; box.textContent=word; box.draggable=true;
+        box.addEventListener('dragstart', e=>{
+          draggingEl=box;
+          e.dataTransfer.setData('text/plain', word);
+        });
+        box.addEventListener('dblclick', ()=>{
+          const firstEmpty=[...document.querySelectorAll('.slot')].find(s=>!s.textContent);
+          if(firstEmpty){
+            firstEmpty.textContent=word;
+            box.remove();
+            updatePunctPlacement();
+          }
+        });
+        return box;
+      }
+
+      function onDropToSlot(e){
+        e.preventDefault();
+        const text=e.dataTransfer.getData('text/plain');
+        const slot=e.currentTarget;
+        if(slot.textContent){
+          document.getElementById('bottomWords').appendChild(createWordBox(slot.textContent));
+        }
+        slot.textContent=text;
+        if(draggingEl && draggingEl.classList.contains('word')) draggingEl.remove();
+        draggingEl=null;
+        updatePunctPlacement();
+      }
+
+      function clearSlot(slot){
+        const txt=slot.textContent;
+        if(txt){
+          document.getElementById('bottomWords').appendChild(createWordBox(txt));
+          slot.textContent='';
+          updatePunctPlacement();
+        }
+      }
+
+      function updatePunctPlacement(){
+        const slots=[...document.querySelectorAll('.slot')];
+        const container=document.getElementById('topSlots');
+        const allFilled=slots.every(s=>s.textContent.trim());
+        if(allFilled){
+          punctEl.textContent = choosePunct(current.words);
+          punctEl.classList.add('show');
+          container.appendChild(punctEl);
+        }else{
+          punctEl.classList.remove('show');
+        }
+      }
+
+      function choosePunct(words){
+        if(!words||words.length===0) return '．';
+        const first=String(words[0]).replace(/[^A-Za-z]/g,'');
+        const wh=['What','Where','When','Who','Which','How','Why'];
+        const aux=['Do','Does','Did','Is','Are','Am','Can','Will','Would'];
+        return (wh.includes(first)||aux.includes(first)) ? '？' : '．';
+      }
+
+      function checkChallengeSafe(arranged, onOk, onNg){
+        const unitNum = normalizeUnit(UNIT) ? Number(UNIT) : null;
+
+        google.script.run
+          .withSuccessHandler(res=>{
+            const ok = (typeof res === 'boolean') ? res : !!(res && res.ok);
+            const reason = (res && res.reason) ? String(res.reason) : '';
+            onOk({ ok, reason });
+          })
+          .withFailureHandler(_=>{
+            google.script.run
+              .withSuccessHandler(res2=>{
+                const ok2 = (typeof res2 === 'boolean') ? res2 : !!(res2 && res2.ok);
+                onOk({ ok: ok2, reason: '' });
+              })
+              .withFailureHandler(err=> onNg(err))
+              .checkOrder(current.id, arranged);
+          })
+          .checkChallengeOrder(current.id, arranged, (current.dummyWord || ''), unitNum, TOKEN);
+      }
+
+      function recordResultSafe(ok, timeMs, dummyUsed, afterOk, afterNg){
+        if (!TOKEN){ afterOk(); return; }
+
+        const unitNum = normalizeUnit(UNIT) ? Number(UNIT) : null;
+
+        google.script.run
+          .withSuccessHandler(()=> afterOk())
+          .withFailureHandler(_=>{
+            google.script.run
+              .withSuccessHandler(()=> afterOk())
+              .withFailureHandler(err=> afterNg(err))
+              .recordResult(TOKEN, current.id, ok, timeMs, MODE);
+          })
+          .recordChallengeResult(TOKEN, current.id, ok, timeMs, MODE, unitNum, (current.dummyWord || ''), !!dummyUsed);
+      }
+
+      function onCheck(){
+        if (busy) return;
+        setBusy(true);
+
+        const arranged=[...document.querySelectorAll('.slot')].map(s=>s.textContent.trim());
+        if(arranged.some(t=>!t)){
+          showMessage('❌ まだ空のスロットがあります。', false, true);
+          setBusy(false);
+          return;
+        }
+
+        showMessage('判定中…', null, false);
+
+        const dummy = (current && current.dummyWord) ? String(current.dummyWord).trim() : '';
+        const dummyUsed = dummy ? arranged.some(w => w === dummy) : false;
+
+        checkChallengeSafe(
+          arranged,
+          ({ ok })=>{
+            const timeMs = Math.max(0, Date.now()-startAt);
+
+            if (ok){
+              stopElapsedTimer();
+              setStreak(getStreak() + 1);
+              clearSavedState();
+
+              recordResultSafe(true, timeMs, dummyUsed, ()=>{}, (err)=> showMessage('保存エラー: '+readErr(err), false, true));
+
+              if (getStreak() >= 5){
+                showMessage('', null, false);
+                celebrateAndExit();
+                return;
+              }
+
+              showMessage('', null, false);
+
+              // ✅ 修正：表示時間を長く + 次の問題が表示されるまでbusyのまま
+              showJudgeOverlay(true, 'つぎの問題へ…', 2000, 900, ()=>{
+                loadRandom(); // setBusy(false)は loadById の最後でやる
+              });
+
+            }else{
+              setStreak(0);
+
+              recordResultSafe(false, timeMs, dummyUsed, ()=>{}, (err)=> showMessage('保存エラー: '+readErr(err), false, true));
+
+              showMessage('', null, false);
+              const sub = dummyUsed ? '関係のない語を使ってるよ🙂' : '語順がちがうよ🙂';
+
+              // ✅ 修正：表示時間を長く + 次の問題が表示されるまでbusyのまま
+              showJudgeOverlay(false, sub, 2000, 0, ()=>{
+                loadRandom(); // setBusy(false)は loadById の最後でやる
+              });
+            }
+          },
+          (err)=>{
+            showMessage('判定エラー: '+readErr(err), false, true);
+            setBusy(false);
+          }
+        );
+      }
+
+      function showMessage(msg, ok, isError){
+        const el=document.getElementById('result');
+        el.textContent=msg||'';
+        el.className='result'+(msg?(ok?(isError?' ng':' ok'):(isError?' ng':'')):'');
+        if(ok===true){
+          const a=document.getElementById('audioOk');
+          if(a&&a.src){ a.currentTime=0; a.play().catch(()=>{}); } else { playPinPon(); }
+        }else if(ok===false){
+          const b=document.getElementById('audioNg');
+          if(b&&b.src){ b.currentTime=0; b.play().catch(()=>{}); }
+        }
+      }
+
+      function goLogin(){
+        try{ window.top.location.href = BASE; }catch(_){ window.location.href = BASE; }
+      }
+
+      function goHome(){
+        if (!TOKEN){ goLogin(); return; }
+        const url = BASE + '?t=' + encodeURIComponent(TOKEN);
+        try{ window.top.location.href = url; }catch(_){ window.location.href = url; }
+      }
+
+      function openHomeConfirm(){
+        const dlg = document.getElementById('homeConfirm');
+        if (dlg) dlg.classList.add('show');
+        else goHome();
+      }
+
+      function onHomeReset(){
+        clearSavedState();
+        setStreak(0);
+        try{ stopElapsedTimer(); }catch(e){}
+        goHome();
+      }
+
+      function onHomeSave(){
+        saveStateForHome();
+        try{ stopElapsedTimer(); }catch(e){}
+        goHome();
+      }
+
+      function celebrateAndExit(){
+        const overlay=document.getElementById('celebrate');
+        const card = overlay.querySelector('.card');
+        overlay.classList.remove('ng');
+        overlay.querySelector('.title').textContent='🏆 5問連続正解！';
+        overlay.querySelector('.sub').textContent='すごい！ ゴールだよ';
+
+        let btnLogin = document.getElementById('btnBackLogin');
+        if (!btnLogin){
+          btnLogin = document.createElement('button');
+          btnLogin.id = 'btnBackLogin';
+          btnLogin.textContent = 'ログイン画面にもどる';
+          btnLogin.className = 'btn-primary';
+          btnLogin.style.marginTop = '16px';
+          btnLogin.style.marginRight = '8px';
+          btnLogin.addEventListener('click', goLogin);
+          card.appendChild(btnLogin);
+        }
+
+        let btnHome = document.getElementById('btnBackHomeFinish');
+        if (!btnHome){
+          btnHome = document.createElement('button');
+          btnHome.id = 'btnBackHomeFinish';
+          btnHome.textContent = 'ホーム画面にもどる';
+          btnHome.style.marginTop = '16px';
+          btnHome.addEventListener('click', goHome);
+          card.appendChild(btnHome);
+        }
+
+        clearSavedState();
+
+        overlay.classList.add('show');
+        runConfetti(1600);
+      }
+
+      function runConfetti(duration=1200){
+        const canvas=document.getElementById('confetti');
+        const ctx=canvas.getContext('2d');
+        const DPR=window.devicePixelRatio||1;
+        const resize=()=>{
+          canvas.width=innerWidth*DPR; canvas.height=innerHeight*DPR;
+          canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
+        };
+        resize();
+
+        const N=140, pieces=[];
+        for(let i=0;i<N;i++){
+          pieces.push({
+            x:Math.random()*canvas.width, y:-Math.random()*canvas.height*0.5,
+            r:4+Math.random()*6,
+            vy:2+Math.random()*3, vx:(Math.random()-0.5)*1.5,
+            rot:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.2,
+            color:pick(['#f97316','#fb923c','#f59e0b','#fde68a','#34d399','#60a5fa'])
+          });
+        }
+        const start=performance.now();
+        const tick=(t)=>{
+          const elapsed=t-start; if(elapsed>duration){ ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          for(const p of pieces){
+            p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+            if(p.y>canvas.height) p.y=-10;
+            ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+            ctx.fillStyle=p.color; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);
+            ctx.restore();
+          }
+          requestAnimationFrame(tick);
+        };
+        window.addEventListener('resize', resize, { once:true });
+        requestAnimationFrame(tick);
+        function pick(a){ return a[(Math.random()*a.length)|0]; }
+      }
+
+      function playPinPon(){
+        try{
+          const ctx=new (window.AudioContext||window.webkitAudioContext)();
+          const now=ctx.currentTime;
+          const o1=ctx.createOscillator(), g1=ctx.createGain();
+          o1.type='sine'; o1.frequency.setValueAtTime(880,now);
+          g1.gain.setValueAtTime(0.0001,now); g1.gain.exponentialRampToValueAtTime(0.4,now+0.01);
+          g1.gain.exponentialRampToValueAtTime(0.0001,now+0.20);
+          o1.connect(g1).connect(ctx.destination); o1.start(now); o1.stop(now+0.22);
+          const o2=ctx.createOscillator(), g2=ctx.createGain();
+          o2.type='sine'; o2.frequency.setValueAtTime(660,now+0.18);
+          g2.gain.setValueAtTime(0.0001,now+0.18); g2.gain.exponentialRampToValueAtTime(0.45,now+0.20);
+          g2.gain.exponentialRampToValueAtTime(0.0001,now+0.45);
+          o2.connect(g2).connect(ctx.destination); o2.start(now+0.18); o2.stop(now+0.48);
+        }catch(e){}
+      }
+
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      function readErr(e){ return (e && (e.message||e)) || '不明なエラー'; }
+    </script>
+  </body>
+</html>

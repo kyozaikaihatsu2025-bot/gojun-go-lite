@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ - 復習モード</title>
+
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c; --accent-100:#ffedd5;
+      }
+      *{ box-sizing:border-box; } html,body{ height:100%; }
+      body{
+        margin:16px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+        color:var(--text);
+        background:radial-gradient(1000px 600px at 20% -10%, #fff 10%, var(--bg) 60%),
+                   radial-gradient(800px 500px at 120% 10%, #fff 0%, var(--bg) 60%);
+      }
+
+      main{ max-width:100%; }
+      .main-left{ max-width:100%; }
+
+      .header{ display:grid; gap:8px; margin-bottom:14px; }
+
+      .titleRow{
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:12px;
+      }
+      h1{
+        margin:0; font-size:clamp(22px,3vw,40px); font-weight:800; letter-spacing:.5px;
+        background:linear-gradient(90deg,var(--accent) 0%,#fb923c 40%,#f59e0b 100%);
+        -webkit-background-clip:text; background-clip:text; color:transparent;
+      }
+      .modeTag{
+        font-size:clamp(14px,2.3vw,18px);
+        font-weight:700;
+        padding:4px 10px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#fff7ed;
+        color:#b45309;
+      }
+      .btn-ghost{
+        padding:6px 12px;
+        border-radius:999px;
+        border:1px solid #fed7aa;
+        background:#ffffffcc;
+        font-size:13px;
+        font-weight:600;
+        cursor:pointer;
+      }
+      .btn-ghost:hover{
+        box-shadow:0 3px 8px rgba(249,115,22,.18);
+      }
+
+      button{
+        padding:8px 14px; border-radius:12px; border:2px solid var(--border);
+        background:linear-gradient(180deg,#ffe8d6 0%,#ffd9b5 100%);
+        color:var(--text); font-weight:700; cursor:pointer;
+        box-shadow:0 1px 0 rgba(0,0,0,.03); transition:transform .03s, box-shadow .15s;
+      }
+      button:hover{ box-shadow:0 6px 14px rgba(249,115,22,.18); }
+      button:active{ transform:translateY(1px); }
+      .btn-primary{
+        background:linear-gradient(180deg,#ffb777 0%,#ff914d 100%);
+        border-color:#ffb777; color:#3b2314;
+      }
+
+      .statusBar{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        align-items:center;
+        justify-content:flex-end;
+        font-size:14px;
+        color:var(--muted);
+      }
+      .statusBadge{
+        padding:6px 12px;
+        border-radius:999px;
+        background:#fff;
+        border:1px solid #ffd7b8;
+        font-weight:600;
+      }
+
+      .prompt{
+        margin:10px 0 14px;
+        padding:10px 14px;
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:12px;
+        display:inline-block;
+        max-width:100%;
+      }
+
+      h2{ margin:14px 0 8px; font-size:16px; color:var(--accent-600); }
+
+      .answerRow{ display:flex; align-items:center; gap:10px; }
+
+      .slots,.words{
+        display:inline-flex;
+        flex-wrap:wrap;
+        gap:10px;
+        min-height:72px;
+        padding:10px;
+        background:#fff;
+        border:2px dashed var(--border);
+        border-radius:14px;
+        max-width:100%;
+      }
+
+      .slot,.word{
+        min-width:96px; min-height:52px; padding:10px 12px; border-radius:12px;
+        display:inline-flex; align-items:center; justify-content:center;
+        background:#fff; user-select:none; transition:box-shadow .15s, transform .05s, border-color .15s;
+      }
+      .slot{ border:2px dashed #ffcaa4; color:#9a8a7a; outline:none; }
+      .slot:hover{ border-color:#ffb37b; }
+      .slot:focus{ box-shadow:0 0 0 4px #ffd7b899; }
+      .word{ border:2px solid #ffb37b; background:linear-gradient(180deg,#fff6ee 0%,#ffe9d7 100%); color:#5a3a1a; cursor:grab; }
+      .word:active{ cursor:grabbing; transform:scale(.98); }
+      .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+      .punct{
+        min-width:44px; min-height:44px; padding:6px 10px; border-radius:999px;
+        display:none; align-items:center; justify-content:center; align-self:center;
+        border:2px solid #ffb37b; background:linear-gradient(180deg,#fff6ee 0%,#ffe9d7 100%);
+        font-weight:800;
+      }
+      .punct.show{ display:flex; }
+
+      .controls.bottom{ margin-top:12px; gap:10px; display:flex; }
+
+      .result{ margin-top:10px; font-weight:800; padding:8px 12px; border-radius:10px; display:inline-block; }
+      .result.ok{ color:#0a3a1a; background:#dcfce7; border:2px solid #86efac; }
+      .result.ng{ color:#4a0a0a; background:#fee2e2; border:2px solid #fecaca; }
+
+      .jp-wh{  background:#dbeafe; border-radius:6px; padding:0 2px; }
+      .jp-subj{background:#fef9c3; border-radius:6px; padding:0 2px; }
+      .jp-aux{ background:#ede9fe; border-radius:6px; padding:0 2px; }
+      .jp-verb{background:#fee2e2; border-radius:6px; padding:0 2px; }
+      .jp-obj{ background:#dcfce7; border-radius:6px; padding:0 2px; }
+      .jp-adv{ background:#e0f2fe; border-radius:6px; padding:0 2px; }
+
+      .role-wh{   background:#dbeafe !important; border-color:#60a5fa !important; }
+      .role-subj{ background:#fef9c3 !important; border-color:#facc15 !important; }
+      .role-aux{  background:#ede9fe !important; border-color:#a855f7 !important; }
+      .role-verb{ background:#fee2e2 !important; border-color:#f97373 !important; }
+      .role-obj{  background:#dcfce7 !important; border-color:#4ade80 !important; }
+      .role-adv{  background:#e0f2fe !important; border-color:#7dd3fc !important; }
+
+      .celebrate{
+        position:fixed; inset:0; z-index:99; display:none; align-items:center; justify-content:center;
+        background: radial-gradient(1200px 800px at 50% -10%, rgba(255,255,255,.9) 0%, rgba(255,237,213,.85) 60%, rgba(255,223,186,.75) 100%);
+      }
+      .celebrate.show{ display:flex; }
+      .celebrate .card{
+        background:#fff; border:3px solid #ffd7b8; border-radius:24px; padding:26px 32px; text-align:center;
+        box-shadow:0 12px 30px rgba(249,115,22,.25); transform:scale(.9); animation:pop .4s ease forwards;
+      }
+      .celebrate .title{ font-size:44px; font-weight:900; color:#ea580c; margin:0 0 8px; }
+      .celebrate .sub{ font-size:16px; color:#8a6a4a; animation:blink 1s linear infinite; margin-bottom:8px; }
+      @keyframes pop { to{ transform:scale(1);} }
+      @keyframes blink { 0%,100%{ opacity:1;} 50%{ opacity:.3;} }
+      canvas#confetti{ position:fixed; inset:0; z-index:98; pointer-events:none; }
+
+      .homeConfirm{
+        position:fixed;
+        inset:0;
+        z-index:120;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.25);
+      }
+      .homeConfirm.show{
+        display:flex;
+      }
+      .homeConfirm-card{
+        background:#fff;
+        border-radius:20px;
+        border:2px solid var(--border);
+        padding:18px 20px;
+        max-width:320px;
+        width:calc(100% - 40px);
+        box-shadow:0 12px 30px rgba(0,0,0,.18);
+        text-align:center;
+      }
+      .homeConfirm-title{
+        font-weight:800;
+        font-size:18px;
+        margin-bottom:8px;
+      }
+      .homeConfirm-text{
+        font-size:14px;
+        color:var(--muted);
+        margin:0 0 14px;
+      }
+      .homeConfirm-buttons{
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+      }
+      .homeConfirm-buttons button{
+        width:100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="header">
+      <div class="titleRow">
+        <h1>語順でGO！</h1>
+        <span class="modeTag">復習モード</span>
+        <button id="btnBackHome" class="btn-ghost" type="button">ホーム画面に戻る</button>
+      </div>
+      <div class="statusBar">
+        <div class="statusBadge">
+          正解数 <span id="correctVal">0</span> / <span id="totalVal">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="main-left">
+        <div id="prompt" class="prompt">読み込み中…</div>
+
+        <section>
+          <h2>答え</h2>
+          <div class="answerRow">
+            <div id="topSlots" class="slots"></div>
+          </div>
+          <div class="hint">※ 下のボックスをドラッグして、ここに<strong>テキストだけ</strong>を置きます。クリック／Enterでクリア。</div>
+        </section>
+
+        <section>
+          <h2>単語ボックス</h2>
+          <div id="bottomWords" class="words"></div>
+        </section>
+
+        <div class="controls bottom">
+          <button id="btnCheck" class="btn-primary">チェック</button>
+          <button id="btnReset">やり直し</button>
+        </div>
+
+        <div id="result" class="result" aria-live="polite"></div>
+
+        <!-- 復習する問題がないとき -->
+        <div id="noDataWrap" style="display:none; text-align:center; margin-top:40px;">
+          <p id="noDataMessage" style="font-size:18px; margin-bottom:24px;">
+            間違えた問題はないみたい。練習モードに取り組もう！
+          </p>
+          <button id="btnNoDataOk" type="button" style="min-width:160px; height:48px; border-radius:16px;">
+            OK
+          </button>
+        </div>
+      </div>
+
+      <audio id="audioOk"></audio>
+      <audio id="audioNg"></audio>
+
+      <canvas id="confetti"></canvas>
+      <div id="celebrate" class="celebrate" aria-hidden="true">
+        <div class="card">
+          <div class="title">🎉 正解！</div>
+          <div class="sub">つぎの問題へ…</div>
+          <!-- 正解後にだけ追加するTTSボタンや文表示はJSで差し込む -->
+        </div>
+      </div>
+
+      <div id="homeConfirm" class="homeConfirm" aria-hidden="true">
+        <div class="homeConfirm-card">
+          <div class="homeConfirm-title">ホームにもどる？</div>
+          <p class="homeConfirm-text">今のゲームデータをどうするかえらんでね。</p>
+          <div class="homeConfirm-buttons">
+            <button id="btnHomeReset" type="button">ゲームのデータをリセット</button>
+            <button id="btnHomeSave" type="button" class="btn-primary">ゲームデータを保存する</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // ★ exec 自動追従用
+      const STORAGE_KEY_BASE = 'go_execBaseUrl';
+      const EXEC_BASE = (() => {
+        const saved = sessionStorage.getItem(STORAGE_KEY_BASE);
+        if (saved) return saved;
+        try{
+          const u = new URL(window.location.href);
+          return u.origin + u.pathname;
+        }catch(e){
+          return window.location.href;
+        }
+      })();
+
+      const EMBED_TOKEN = '<?= typeof token !== "undefined" ? token : "" ?>';
+      const EMBED_ID   = '<?= typeof id   !== "undefined" ? id   : "" ?>';
+      const EMBED_FROM = '<?= typeof from !== "undefined" ? from : "" ?>';
+      const EMBED_UNIT = '<?= typeof unit !== "undefined" ? unit : "" ?>';
+
+      const MODE = 'review'; // 1文復習モード
+
+      function hasValidEmbedToken(){
+        return EMBED_TOKEN && EMBED_TOKEN.indexOf('<?=') === -1 && EMBED_TOKEN.indexOf('?>') === -1;
+      }
+
+      let TOKEN = null;
+      let FIXED_ID = null;
+      let FROM_STAMP = false;
+      let UNIT = '';
+
+      function resolveToken(cb){
+        if (hasValidEmbedToken()) {
+          TOKEN = EMBED_TOKEN;
+
+          if (EMBED_ID && EMBED_ID.indexOf('<?=') === -1 && EMBED_ID.indexOf('?>') === -1) {
+            FIXED_ID = String(EMBED_ID);
+          }
+          if (EMBED_FROM && EMBED_FROM.indexOf('<?=') === -1 && EMBED_FROM.indexOf('?>') === -1) {
+            FROM_STAMP = (String(EMBED_FROM) === 'stamp');
+          }
+          if (EMBED_UNIT && EMBED_UNIT.indexOf('<?=') === -1 && EMBED_UNIT.indexOf('?>') === -1) {
+            UNIT = String(EMBED_UNIT);
+          }
+
+          // URL からの補完
+          const p = new URLSearchParams(location.search);
+          if (!FIXED_ID) {
+            const idStr = p.get('id');
+            FIXED_ID = idStr ? String(idStr) : null;
+          }
+          if (!EMBED_FROM) {
+            FROM_STAMP = p.get('from') === 'stamp';
+          }
+          if (!UNIT) {
+            const u = p.get('unit');
+            if (u) UNIT = String(u);
+          }
+
+          cb();
+          return;
+        }
+
+        // テンプレート未埋め込み（プレビュー等）
+        if (window.google && google.script && google.script.url){
+          google.script.url.getLocation(loc=>{
+            const param = (loc && loc.parameter) || {};
+            TOKEN = param.t ? String(param.t) : '';
+            const idStr = param.id;
+            FIXED_ID = idStr ? String(idStr) : null;
+            FROM_STAMP = param.from === 'stamp';
+            UNIT = param.unit ? String(param.unit) : '';
+            cb();
+          });
+        }else{
+          const p = new URLSearchParams(location.search);
+          TOKEN = p.get('t') || '';
+          const idStr = p.get('id');
+          FIXED_ID = idStr ? String(idStr) : null;
+          FROM_STAMP = p.get('from') === 'stamp';
+          const u = p.get('unit');
+          UNIT = u ? String(u) : '';
+          cb();
+        }
+      }
+
+      const STATE_KEY = () => TOKEN ? `go_state_${TOKEN}` : null;
+
+      function saveStateForHome(){
+        const key = STATE_KEY();
+        if (!key || !current) return;
+        const slots = [...document.querySelectorAll('.slot')];
+        const arranged = slots.map(s => s.textContent.trim());
+        const data = { mode: MODE, id: current.id, arranged };
+        try{ sessionStorage.setItem(key, JSON.stringify(data)); }catch(e){ console.log(e); }
+      }
+      function clearSavedState(){
+        const key = STATE_KEY();
+        if (!key) return;
+        sessionStorage.removeItem(key);
+      }
+
+      let current = null;
+      let punctEl = null;
+      let draggingEl = null;
+      let busy = false;
+      let startAt = 0;
+
+      let rolesEnSegments = null;
+      let rolesEnPerWord  = null;
+      let rolesJpSegments = null;
+
+      let correctCount = 0;
+      let totalReview = 0;
+      let mistakeCount = 0;
+
+      // ------------- Web Speech API（TTS）関連 -------------
+      let ttsVoice = null;
+
+      function chooseTtsVoice(){
+        if (!('speechSynthesis' in window)) return null;
+        const voices = window.speechSynthesis.getVoices() || [];
+        if (!voices.length) return null;
+
+        let v = voices.find(v => v.voiceURI === 'Google US English');
+        if (v) return v;
+
+        v = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en-'));
+        if (v) return v;
+
+        return voices[0] || null;
+      }
+
+      function ensureTtsVoice(){
+        if (!('speechSynthesis' in window)) return;
+        const setVoice = () => { ttsVoice = chooseTtsVoice(); };
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length){
+          setVoice();
+        }else{
+          window.speechSynthesis.addEventListener('voiceschanged', function handler(){
+            window.speechSynthesis.removeEventListener('voiceschanged', handler);
+            setVoice();
+          });
+        }
+      }
+
+      function choosePunct(words){
+        if (!words || !words.length) return '．';
+        const first = String(words[0]).replace(/[^A-Za-z]/g,'');
+        const wh   = ['What','Where','When','Who','Which','How','Why'];
+        const aux  = ['Do','Does','Did','Is','Are','Am','Can','Will','Would'];
+        return (wh.includes(first) || aux.includes(first)) ? '？' : '．';
+      }
+
+      function getCurrentSentenceText(){
+        if (!current || !Array.isArray(current.words) || !current.words.length) return '';
+        const words = current.words.slice();
+        const punct = choosePunct(words);
+        const sentence = words.join(' ');
+        const tail = (punct === '？') ? '?' : '.';
+        if (/[.?]$/.test(sentence.trim())){
+          return sentence.trim();
+        }
+        return sentence.trim() + tail;
+      }
+
+      function speakCurrentSentence(rate){
+        if (!('speechSynthesis' in window)) return;
+        const text = getCurrentSentenceText();
+        if (!text) return;
+
+        try{ window.speechSynthesis.cancel(); }catch(e){}
+
+        const uttr = new SpeechSynthesisUtterance(text);
+        if (ttsVoice){
+          uttr.voice = ttsVoice;
+          uttr.lang  = ttsVoice.lang || 'en-US';
+        }else{
+          uttr.lang = 'en-US';
+        }
+        uttr.rate = rate || 1.0;
+        try{ window.speechSynthesis.speak(uttr); }catch(e){ console.log('TTS error', e); }
+      }
+      function speakCurrentSentenceNormal(){ speakCurrentSentence(1.0); }
+      function speakCurrentSentenceSlow(){ speakCurrentSentence(0.8); }
+      // -----------------------------------------------------
+
+      function updateStatus(){
+        const cEl = document.getElementById('correctVal');
+        const tEl = document.getElementById('totalVal');
+        if (cEl) cEl.textContent = String(correctCount);
+        if (tEl) tEl.textContent = String(totalReview);
+      }
+
+      function setBusy(v){
+        busy = v;
+        const btn = document.getElementById('btnCheck');
+        if (btn) btn.disabled = v;
+      }
+
+      function showNoData(message){
+        const wrap = document.getElementById('noDataWrap');
+        const msgEl = document.getElementById('noDataMessage');
+        if (msgEl && message) msgEl.textContent = message;
+        if (wrap) wrap.style.display = 'block';
+        const prompt = document.getElementById('prompt');
+        if (prompt && message) prompt.textContent = message;
+      }
+
+      // ★★★ 名前入りの英文・日本語に差し替える処理 ★★★
+      function applyNamePersonalization(item){
+        if (!item) return item;
+
+        const fullKana = (item.full_name_kana || '').trim();
+        const firstEn  = (item.first_name_en || '').trim();
+
+        if (item.prompt && item.prompt.includes('〇〇') && fullKana.includes(' ')) {
+          const parts = fullKana.split(' ').filter(Boolean);
+          if (parts.length >= 1) {
+            const firstKana = parts[0];
+            if (firstKana) {
+              item.prompt = String(item.prompt).replace(/〇〇/g, firstKana);
+            }
+          }
+        }
+
+        if (firstEn) {
+          const base = (item.correct_sentence || '').trim();
+          if (base === 'I am') {
+            item.correct_sentence = `I am ${firstEn}`;
+
+            if (Array.isArray(item.words)) {
+              const joined = item.words.join(' ').trim();
+              if (joined === 'I am') {
+                item.words = ['I', 'am', firstEn];
+              }
+            }
+          }
+        }
+
+        return item;
+      }
+
+      window.addEventListener('load', () => {
+        ensureTtsVoice();
+
+        resolveToken(() => {
+          const backHomeBtn = document.getElementById('btnBackHome');
+          if (backHomeBtn){
+            if (FROM_STAMP){
+              backHomeBtn.textContent = 'スタンプラリーに戻る';
+            }
+            backHomeBtn.addEventListener('click', () => goHome());
+          }
+          const btnHomeReset = document.getElementById('btnHomeReset');
+          const btnHomeSave  = document.getElementById('btnHomeSave');
+          if (btnHomeReset) btnHomeReset.addEventListener('click', onHomeReset);
+          if (btnHomeSave)  btnHomeSave.addEventListener('click', onHomeSave);
+
+          const btnNoDataOk = document.getElementById('btnNoDataOk');
+          if (btnNoDataOk){
+            btnNoDataOk.addEventListener('click', () => goHome());
+          }
+
+          document.getElementById('btnReset').addEventListener('click', () => {
+            if (!busy) buildUI();
+          });
+          document.getElementById('btnCheck').addEventListener('click', onCheck);
+
+          if (!FIXED_ID) {
+            showNoData('復習する文が見つからないみたい。もう一度やりなおしてね。');
+            return;
+          }
+
+          totalReview = 1;
+          updateStatus();
+
+          loadById(FIXED_ID);
+        });
+      });
+
+      function loadById(id){
+        showMessage('読み込み中…', false);
+        clearJapaneseHighlight();
+        clearRoleColorsAll();
+        rolesEnSegments = null;
+        rolesEnPerWord  = null;
+        rolesJpSegments = null;
+
+        google.script.run
+          .withSuccessHandler(item => {
+            if (!item || !item.words){
+              showNoData('この文のデータが見つからなかったよ。');
+              return;
+            }
+
+            item = applyNamePersonalization(item);
+
+            current = item;
+
+            // ✅ roles があればそれを使う（RolesBuilders）
+            rolesEnSegments = item.rolesEn || item.roles_en || item.enRoles || null;
+            rolesEnPerWord  = null;
+            rolesJpSegments = item.rolesJp || item.roles_jp || item.jpRoles || null;
+
+            const pEl = document.getElementById('prompt');
+            if (pEl) pEl.textContent = item.prompt || '';
+
+            setAudio(item);
+            buildUI();
+
+            showMessage('', false);
+            startAt = Date.now();
+          })
+          .withFailureHandler(err => {
+            showNoData('読み込みエラー: ' + readErr(err));
+          })
+          .getItemById(id, TOKEN);
+      }
+
+      function setAudio(item){
+        const ok = document.getElementById('audioOk');
+        const ng = document.getElementById('audioNg');
+        ok.removeAttribute('src'); ng.removeAttribute('src');
+        if (item.audioOk) ok.src = item.audioOk;
+        if (item.audioNg) ng.src = item.audioNg;
+      }
+
+      function buildUI(){
+        const top = document.getElementById('topSlots');
+        const bottom = document.getElementById('bottomWords');
+        top.innerHTML = ''; bottom.innerHTML = ''; punctEl = null;
+
+        if (!current || !current.words) return;
+
+        current.words.forEach(() => {
+          const slot = document.createElement('div');
+          slot.className = 'slot';
+          slot.tabIndex = 0;
+          slot.addEventListener('dragover', e => e.preventDefault());
+          slot.addEventListener('drop', onDropToSlot);
+          slot.addEventListener('click', () => clearSlot(slot));
+          slot.addEventListener('keydown', e => {
+            if (['Enter','Backspace','Delete'].includes(e.key)) clearSlot(slot);
+          });
+          top.appendChild(slot);
+        });
+
+        punctEl = document.createElement('div');
+        punctEl.id = 'punct';
+        punctEl.className = 'punct';
+        punctEl.textContent = choosePunct(current.words);
+        top.appendChild(punctEl);
+        updatePunctPlacement();
+
+        shuffle([...current.words]).forEach(w => bottom.appendChild(createWordBox(w)));
+
+        mistakeCount = 0;
+      }
+
+      function createWordBox(word){
+        const box = document.createElement('div');
+        box.className = 'word';
+        box.textContent = word;
+        box.draggable = true;
+        box.addEventListener('dragstart', e => {
+          draggingEl = box;
+          e.dataTransfer.setData('text/plain', word);
+        });
+        box.addEventListener('dblclick', () => {
+          const firstEmpty = [...document.querySelectorAll('.slot')].find(s => !s.textContent);
+          if (firstEmpty){
+            firstEmpty.textContent = word;
+            box.remove();
+            updatePunctPlacement();
+          }
+        });
+        return box;
+      }
+
+      function onDropToSlot(e){
+        e.preventDefault();
+        const text = e.dataTransfer.getData('text/plain');
+        const slot = e.currentTarget;
+        if (slot.textContent){
+          document.getElementById('bottomWords').appendChild(createWordBox(slot.textContent));
+        }
+        slot.textContent = text;
+        if (draggingEl && draggingEl.classList.contains('word')) draggingEl.remove();
+        draggingEl = null;
+        updatePunctPlacement();
+      }
+
+      function clearSlot(slot){
+        const txt = slot.textContent;
+        if (txt){
+          document.getElementById('bottomWords').appendChild(createWordBox(txt));
+          slot.textContent = '';
+          updatePunctPlacement();
+        }
+      }
+
+      function updatePunctPlacement(){
+        if (!punctEl) return;
+        const slots = [...document.querySelectorAll('.slot')];
+        const container = document.getElementById('topSlots');
+        const allFilled = slots.every(s => s.textContent.trim());
+        if (allFilled){
+          punctEl.textContent = choosePunct(current.words);
+          punctEl.classList.add('show');
+          container.appendChild(punctEl);
+        }else{
+          punctEl.classList.remove('show');
+        }
+      }
+
+      function onCheck(){
+        if (busy || !current) return;
+        setBusy(true);
+
+        const arranged = [...document.querySelectorAll('.slot')].map(s => s.textContent.trim());
+        if (arranged.some(t => !t)){
+          showMessage('❌ まだ空のスロットがあります。', false, true);
+          setBusy(false);
+          return;
+        }
+
+        // ★ 特例：名前入り "I am ○○" 文
+        if (current && current.first_name_en){
+          const first = String(current.first_name_en).trim();
+          if (first){
+            const arrangedStr = arranged.join(' ').trim();
+            const target = `I am ${first}`;
+            if (arrangedStr === target){
+              const timeMs = Math.max(0, Date.now() - startAt);
+              const modeParam = FROM_STAMP ? 'stamp' : 'review';
+
+              const finishOk = () => {
+                mistakeCount = 0;
+                clearJapaneseHighlight();
+                clearRoleColorsAll();
+                correctCount = 1;
+                updateStatus();
+                showMessage('✅ 正解！', true);
+                clearSavedState();
+                celebrateAndExit();
+              };
+
+              if (TOKEN){
+                google.script.run
+                  .withSuccessHandler(() => finishOk())
+                  .withFailureHandler(err => {
+                    showMessage('保存エラー: ' + readErr(err), false, true);
+                    setBusy(false);
+                  })
+                  .recordResult(TOKEN, current.id, true, timeMs, modeParam);
+              }else{
+                finishOk();
+              }
+              return;
+            }
+          }
+        }
+
+        google.script.run
+          .withSuccessHandler(({ok}) => {
+            const timeMs = Math.max(0, Date.now() - startAt);
+
+            const afterSave = () => {
+              if (ok){
+                mistakeCount = 0;
+                clearJapaneseHighlight();
+                clearRoleColorsAll();
+
+                correctCount = 1;
+                updateStatus();
+
+                showMessage('✅ 正解！', true);
+                clearSavedState();
+                celebrateAndExit();
+              }else{
+                mistakeCount++;
+                let msg;
+                if (mistakeCount === 1) msg = '❌ もう一度！';
+                else if (mistakeCount === 2) msg = '❌ 次こそは！';
+                else msg = '❌ 色に合わせて並び替えてみよう‼';
+                showMessage(msg, false);
+
+                /* ✅✅✅ ここだけ最小修正：待たずに即並び直し */
+                buildUI();
+                applyRoleHints();
+                setBusy(false);
+              }
+            };
+
+            if (!TOKEN){
+              afterSave();
+              return;
+            }
+
+            const modeParam = FROM_STAMP ? 'stamp' : 'review';
+
+            google.script.run
+              .withSuccessHandler(() => afterSave())
+              .withFailureHandler(err => {
+                showMessage('保存エラー: ' + readErr(err), false, true);
+                setBusy(false);
+              })
+              .recordResult(TOKEN, current.id, ok, timeMs, modeParam);
+          })
+          .withFailureHandler(err => {
+            showMessage('判定エラー: ' + readErr(err), false, true);
+            setBusy(false);
+          })
+          .checkOrder(current.id, arranged);
+      }
+
+      function showMessage(msg, ok, isError){
+        const el = document.getElementById('result');
+        el.textContent = msg || '';
+        el.className = 'result' + (msg ? (ok ? (isError ? ' ng' : ' ok') : (isError ? ' ng' : '')) : '');
+
+        if (ok === true){
+          const a = document.getElementById('audioOk');
+          if (a && a.src){ a.currentTime = 0; a.play().catch(()=>{}); }
+          else { playPinPon(); }
+        }else if (ok === false){
+          const b = document.getElementById('audioNg');
+          if (b && b.src){ b.currentTime = 0; b.play().catch(()=>{}); }
+        }
+      }
+
+      function goLogin(){
+        const url = EXEC_BASE;
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      }
+
+      function goStamp(){
+        if (!TOKEN){ goLogin(); return; }
+        let url = EXEC_BASE + '?page=game_stamp&t=' + encodeURIComponent(TOKEN);
+        if (UNIT){ url += '&unit=' + encodeURIComponent(UNIT); }
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      }
+
+      function goHome(){
+        if (FROM_STAMP){ goStamp(); return; }
+        if (!TOKEN){ goLogin(); return; }
+        const url = EXEC_BASE + '?t=' + encodeURIComponent(TOKEN);
+        try{ window.top.location.href = url; }
+        catch(_){ window.location.href = url; }
+      }
+
+      function onHomeReset(){
+        clearSavedState();
+        goHome();
+      }
+
+      function onHomeSave(){
+        saveStateForHome();
+        goHome();
+      }
+
+      function celebrateAndExit(){
+        const overlay = document.getElementById('celebrate');
+        const card    = overlay.querySelector('.card');
+
+        let exEl = document.getElementById('finishedSentence');
+        if (!exEl){
+          exEl = document.createElement('div');
+          exEl.id = 'finishedSentence';
+          exEl.style.fontSize = '24px';
+          exEl.style.fontWeight = '800';
+          exEl.style.marginBottom = '12px';
+          exEl.style.color = '#b45309';
+          exEl.style.wordBreak = 'keep-all';
+          exEl.style.lineHeight = '1.4';
+          card.insertBefore(exEl, card.firstChild);
+        }
+        const sentenceText = getCurrentSentenceText() || (current && current.correct_sentence) || '';
+        exEl.textContent = sentenceText;
+
+        overlay.querySelector('.title').textContent = '✅ 復習おわり！';
+        overlay.querySelector('.sub').textContent   = 'よくがんばったね！';
+
+        try{ speakCurrentSentenceNormal(); }catch(e){ console.log('auto TTS failed', e); }
+
+        let ttsArea = document.getElementById('ttsButtons');
+        if (!ttsArea){
+          ttsArea = document.createElement('div');
+          ttsArea.id = 'ttsButtons';
+          ttsArea.style.marginTop = '12px';
+          ttsArea.style.display = 'flex';
+          ttsArea.style.justifyContent = 'center';
+          ttsArea.style.flexWrap = 'wrap';
+          ttsArea.style.gap = '8px';
+
+          const btnReplay = document.createElement('button');
+          btnReplay.type = 'button';
+          btnReplay.textContent = '▶ もう1回きく';
+          btnReplay.className = 'btn-primary';
+          btnReplay.addEventListener('click', () => { speakCurrentSentenceNormal(); });
+
+          const btnSlow = document.createElement('button');
+          btnSlow.type = 'button';
+          btnSlow.textContent = '🐢 ゆっくりきく';
+          btnSlow.addEventListener('click', () => { speakCurrentSentenceSlow(); });
+
+          ttsArea.appendChild(btnReplay);
+          ttsArea.appendChild(btnSlow);
+          card.appendChild(ttsArea);
+        }
+
+        let btnLogin = document.getElementById('btnBackLogin');
+        if (!btnLogin){
+          btnLogin = document.createElement('button');
+          btnLogin.id = 'btnBackLogin';
+          btnLogin.textContent = 'ログイン画面にもどる';
+          btnLogin.className   = 'btn-primary';
+          btnLogin.style.marginTop = '16px';
+          btnLogin.style.marginRight = '8px';
+          btnLogin.addEventListener('click', goLogin);
+          card.appendChild(btnLogin);
+        }
+
+        let btnHome = document.getElementById('btnBackHomeFinish');
+        if (!btnHome){
+          btnHome = document.createElement('button');
+          btnHome.id = 'btnBackHomeFinish';
+          btnHome.textContent = 'ホーム画面にもどる';
+          btnHome.style.marginTop = '16px';
+          btnHome.addEventListener('click', goHome);
+          card.appendChild(btnHome);
+        }
+        if (FROM_STAMP){
+          btnHome.textContent = 'スタンプラリーに戻る';
+        }
+
+        clearSavedState();
+        overlay.classList.add('show');
+        runConfetti(1600);
+      }
+
+      function runConfetti(duration=1200){
+        const canvas = document.getElementById('confetti');
+        const ctx    = canvas.getContext('2d');
+        const DPR    = window.devicePixelRatio || 1;
+        const resize = () => {
+          canvas.width  = innerWidth * DPR;
+          canvas.height = innerHeight * DPR;
+          canvas.style.width  = innerWidth  + 'px';
+          canvas.style.height = innerHeight + 'px';
+        };
+        resize();
+
+        const N = 140, pieces = [];
+        for (let i=0;i<N;i++){
+          pieces.push({
+            x:Math.random()*canvas.width, y:-Math.random()*canvas.height*0.5,
+            r:4+Math.random()*6,
+            vy:2+Math.random()*3, vx:(Math.random()-0.5)*1.5,
+            rot:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.2,
+            color:pick(['#f97316','#fb923c','#f59e0b','#fde68a','#34d399','#60a5fa'])
+          });
+        }
+        const start = performance.now();
+        const tick  = t => {
+          const elapsed = t-start;
+          if (elapsed>duration){ ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          for (const p of pieces){
+            p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+            if (p.y>canvas.height) p.y = -10;
+            ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);
+            ctx.restore();
+          }
+          requestAnimationFrame(tick);
+        };
+        window.addEventListener('resize', resize, { once:true });
+        requestAnimationFrame(tick);
+        function pick(a){ return a[(Math.random()*a.length)|0]; }
+      }
+
+      function playPinPon(){
+        try{
+          const ctx = new (window.AudioContext||window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+          o1.type='sine'; o1.frequency.setValueAtTime(880,now);
+          g1.gain.setValueAtTime(0.0001,now); g1.gain.exponentialRampToValueAtTime(0.4,now+0.01);
+          g1.gain.exponentialRampToValueAtTime(0.0001,now+0.20);
+          o1.connect(g1).connect(ctx.destination); o1.start(now); o1.stop(now+0.22);
+          const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+          o2.type='sine'; o2.frequency.setValueAtTime(660,now+0.18);
+          g2.gain.setValueAtTime(0.0001,now+0.18); g2.gain.exponentialRampToValueAtTime(0.45,now+0.20);
+          g2.gain.exponentialRampToValueAtTime(0.0001,now+0.45);
+          o2.connect(g2).connect(ctx.destination); o2.start(now+0.18); o2.stop(now+0.48);
+        }catch(e){}
+      }
+
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+      function readErr(e){ return (e && (e.message||e)) || '不明なエラー'; }
+
+      /* ===== 役割ヒント（ここが今回の修正ポイント） ===== */
+
+      function clearRoleClasses(el){
+        el.classList.remove('role-subj','role-verb','role-obj','role-aux','role-wh','role-adv');
+      }
+      function clearRoleColorsAll(){
+        document.querySelectorAll('.slot,.word').forEach(clearRoleClasses);
+      }
+
+      // ✅ rolesEnSegments が無い時は「推測しない」＝ null を返す
+      function getEnRolesPerWord(){
+        if (!current || !current.words) return null;
+
+        if (rolesEnSegments){
+          if (rolesEnPerWord && rolesEnPerWord.length === current.words.length) return rolesEnPerWord;
+
+          const words = current.words.slice();
+          const roles = new Array(words.length).fill(null);
+
+          function applySegment(text, roleName){
+            if (!text) return;
+            String(text).split('／').forEach(seg=>{
+              const segWords = String(seg).trim().split(/\s+/).filter(Boolean);
+              if (!segWords.length) return;
+              let wi = 0;
+              for (let i=0;i<words.length && wi<segWords.length;i++){
+                if (roles[i]) continue;
+                if (words[i] === segWords[wi]){
+                  roles[i] = roleName;
+                  wi++;
+                }
+              }
+            });
+          }
+
+          const src = rolesEnSegments || {};
+          applySegment(src.Wh || src.wh,       'wh');
+          applySegment(src.S  || src.subj,     'subj');
+          applySegment(src.Aux|| src.aux,      'aux');
+          applySegment(src.V  || src.v,        'verb');
+          applySegment(src['O/C'] || src.OC || src.oc, 'obj');
+          applySegment(src.Adv|| src.adv,      'adv');
+
+          for (let i=0;i<roles.length;i++){
+            if (!roles[i]) roles[i] = 'obj';
+          }
+          rolesEnPerWord = roles;
+          return rolesEnPerWord;
+        }
+
+        // ★ ここが大事：フォールバック推測はしない
+        return null;
+      }
+
+      function roleToClass(role){
+        switch(String(role).toLowerCase()){
+          case 'wh':  return 'role-wh';
+          case 's':
+          case 'subj': return 'role-subj';
+          case 'aux': return 'role-aux';
+          case 'v':
+          case 'verb': return 'role-verb';
+          case 'adv': return 'role-adv';
+          default:    return 'role-obj';
+        }
+      }
+
+      function colorSlotsByRole(){
+        if (!current || !current.words) return;
+        const slots = document.querySelectorAll('.slot');
+        slots.forEach(clearRoleClasses);
+
+        const roles = getEnRolesPerWord();
+        if (!roles) return;
+
+        roles.forEach((role,i)=>{
+          if (role && i < slots.length){
+            const cls = roleToClass(role);
+            if (cls) slots[i].classList.add(cls);
+          }
+        });
+      }
+
+      function colorWordsByRole(){
+        if (!current || !current.words) return;
+        const roles = getEnRolesPerWord();
+        if (!roles) return;
+
+        const roleMap = {};
+        current.words.forEach((w,i)=>{
+          const key = String(w);
+          if (!roleMap[key]) roleMap[key] = [];
+          roleMap[key].push(roles[i]);
+        });
+
+        document.querySelectorAll('.word').forEach(wEl=>{
+          clearRoleClasses(wEl);
+          const key = wEl.textContent.trim();
+          const list = roleMap[key];
+          if (list && list.length){
+            const role = list.shift();
+            const cls  = roleToClass(role);
+            if (cls) wEl.classList.add(cls);
+          }
+        });
+      }
+
+      function clearJapaneseHighlight(){
+        const el = document.getElementById('prompt');
+        if (!el || !current) return;
+        el.textContent = current.prompt || el.textContent;
+      }
+
+      function escapeHtml(s){
+        return String(s)
+          .replace(/&/g,'&amp;')
+          .replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;');
+      }
+
+      function renderJapaneseWithRoles(el, text, segments){
+        if (!el) return;
+        if (!text){
+          el.textContent = '';
+          return;
+        }
+
+        const defs = [
+          { key:'Wh',  cls:'jp-wh'  },
+          { key:'S',   cls:'jp-subj'},
+          { key:'Aux', cls:'jp-aux' },
+          { key:'V',   cls:'jp-verb'},
+          { key:'OC',  cls:'jp-obj' },
+          { key:'O/C', cls:'jp-obj' },
+          { key:'Adv', cls:'jp-adv'}
+        ];
+
+        const found = [];
+        const usedRanges = [];
+
+        defs.forEach(d=>{
+          const src = segments || {};
+          let raw = src[d.key];
+          if (raw == null && d.key === 'O/C' && src.OC != null) raw = src.OC;
+          if (raw == null) return;
+
+          String(raw).split('／').forEach(part=>{
+            const val = String(part).trim();
+            if (!val) return;
+
+            let from = 0;
+            while (true) {
+              const idx = text.indexOf(val, from);
+              if (idx < 0) break;
+              const end = idx + val.length;
+
+              let overlap = false;
+              for (const r of usedRanges) {
+                if (!(end <= r.start || idx >= r.end)) {
+                  overlap = true; break;
+                }
+              }
+              if (!overlap) {
+                found.push({idx, val, cls:d.cls});
+                usedRanges.push({start:idx, end});
+              }
+              from = end;
+            }
+          });
+        });
+
+        if (!found.length){
+          el.textContent = text;
+          return;
+        }
+
+        found.sort((a,b)=>a.idx-b.idx);
+
+        let html = '';
+        let cursor = 0;
+        for (const f of found){
+          if (f.idx > cursor){
+            html += escapeHtml(text.slice(cursor, f.idx));
+          }
+          html += `<span class="${f.cls}">${escapeHtml(f.val)}</span>`;
+          cursor = f.idx + f.val.length;
+        }
+        if (cursor < text.length){
+          html += escapeHtml(text.slice(cursor));
+        }
+        el.innerHTML = html;
+      }
+
+      // ✅ rolesJpSegments が無い時は「推測しない」＝色付けしない
+      function colorJapanesePrompt(){
+        const el = document.getElementById('prompt');
+        if (!el) return;
+        const text = (current && current.prompt) ? current.prompt : el.textContent || '';
+        if (!text){
+          el.textContent = '';
+          return;
+        }
+        if (rolesJpSegments){
+          renderJapaneseWithRoles(el, text, rolesJpSegments);
+        }else{
+          el.textContent = text;
+        }
+      }
+
+      function applyRoleHints(){
+        colorJapanesePrompt();
+        colorSlotsByRole();
+        if (mistakeCount >= 3){
+          colorWordsByRole();
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top"><meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>先生ダッシュボード</title>
+  <style>
+    body{font-family:system-ui,"Noto Sans JP",sans-serif;background:#fff7ed;color:#3b2a1a;margin:0;padding:24px}
+    .card{max-width:900px;margin:16px auto;padding:16px;border:2px solid #ffd7b8;border-radius:14px;background:#fff}
+    input,button{height:38px;border-radius:10px;border:2px solid #ffd7b8;padding:6px 10px}
+    button{background:linear-gradient(180deg,#ffb777,#ff914d);border-color:#ffb777;color:#3b2314;font-weight:800;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid #ffd7b8;padding:8px;text-align:left}
+    th{background:#fff1e6}
+    .muted{color:#8a6a4a}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>先生ダッシュボード</h1>
+    <div>
+      <label>PIN: <input id="pin" type="password" style="width:120px"></label>
+      <label>期間（日）: <input id="days" type="number" value="7" style="width:80px"></label>
+      <button id="load">読み込み</button>
+      <span id="msg" class="muted"></span>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    $('load').addEventListener('click', ()=>{
+      $('msg').textContent = '確認中…';
+      google.script.run.withSuccessHandler(({ok})=>{
+        if(!ok){ $('msg').textContent='PINが違います'; return; }
+        $('msg').textContent='読込中…';
+        google.script.run.withSuccessHandler((rows)=>{
+          $('msg').textContent='';
+          render(rows);
+        }).withFailureHandler(err=>{
+          $('msg').textContent='読み込みエラー: '+((err&&err.message)||err);
+        }).listSummary(Number($('days').value||7));
+      }).withFailureHandler(err=>{
+        $('msg').textContent='PIN確認エラー: '+((err&&err.message)||err);
+      }).verifyTeacher($('pin').value);
+    });
+
+    function render(rows){
+      const w=$('tableWrap');
+      if(!rows || !rows.length){ w.innerHTML='<p class="muted">データがありません</p>'; return; }
+      const html = [
+        '<table><thead><tr>',
+        '<th>student_id</th><th>name</th><th>Attempts</th><th>Correct</th><th>Accuracy</th><th>Avg_ms</th><th>Last</th>',
+        '</tr></thead><tbody>',
+        ...rows.map(r=>`<tr>
+          <td>${escapeHTML(r.student_id||'')}</td>
+          <td>${escapeHTML(r.name||'')}</td>
+          <td>${r.attempts||0}</td>
+          <td>${r.correct||0}</td>
+          <td>${r.attempts? ((r.correct/r.attempts*100).toFixed(1)+'%'):'-'}</td>
+          <td>${r.avg_ms||0}</td>
+          <td>${new Date(r.last).toLocaleString()}</td>
+        </tr>`),
+        '</tbody></table>'
+      ].join('');
+      w.innerHTML = html;
+    }
+    function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  </script>
+</body>
+</html>
