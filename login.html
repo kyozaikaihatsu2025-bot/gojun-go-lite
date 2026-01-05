@@ -80,6 +80,13 @@
         cursor:default;
       }
 
+      /* ✅追加：教師ログイン用（見た目だけ少し控えめ） */
+      button.ghost{
+        background:#fff;
+        border:2px solid #fdba74;
+        color:#7c3a12;
+      }
+
       .msg{
         margin-top:10px;
         font-size:13px;
@@ -121,6 +128,9 @@
 
         <button id="btnLogin">ログインする</button>
         <button id="btnShowRegister" type="button">はじめてのゲーム（新規登録）</button>
+
+        <!-- ✅追加：教師ログイン -->
+        <button id="teacherLoginBtn" type="button" class="ghost">教師ログイン</button>
       </div>
 
       <!-- ▼ 新規登録フォーム ▼ -->
@@ -186,7 +196,6 @@
         }
       }
 
-      // ------- ここから DOM 読み込み後にまとめて処理 -------
       window.addEventListener('load', () => {
         const loginForm     = document.getElementById('loginForm');
         const registerForm  = document.getElementById('registerForm');
@@ -207,6 +216,9 @@
         const btnRegister    = document.getElementById('btnRegister');
         const btnBackLogin   = document.getElementById('btnBackLogin');
         const msgEl          = document.getElementById('msg');
+
+        // ✅追加：教師ログインボタン
+        const teacherLoginBtn = document.getElementById('teacherLoginBtn');
 
         function setMessage(text, isError){
           msgEl.textContent = text || '';
@@ -236,9 +248,6 @@
           regFullNameEl.focus();
         }
 
-        // ★ パスワード整形
-        //   1) 全角数字 → 半角
-        //   2) 0〜9 以外を全部削除
         function normalizePin(raw){
           const full = '０１２３４５６７８９';
           const half = '0123456789';
@@ -249,33 +258,22 @@
             return idx >= 0 ? half[idx] : ch;
           });
 
-          // 数字以外（スペース・改行・記号など）は全部削除
           s = s.replace(/[^0-9]/g, '');
-
           return s;
         }
 
-        // ★ 本名・ふりがな用：スペースの整理
-        //   ・全角スペース → 半角スペース
-        //   ・前後の空白カット
-        //   ・スペースが連続していたら 1つにまとめる
         function normalizeNameWithSpace(raw){
           let s = String(raw || '');
-          // 全角スペースを半角に
           s = s.replace(/\u3000/g, ' ');
-          // 前後の空白を削る
           s = s.trim();
-          // 連続する空白文字をスペース1つに
           s = s.replace(/\s+/g, ' ');
           return s;
         }
 
-        // 4ケタ数字チェック（ここに来るときはすでに数字だけ）
         function validatePin4(pass){
           return /^\d{4}$/.test(pass);
         }
 
-        // ▼ 通常ログイン（ニックネーム＋4ケタ）
         function onLogin(){
           const nickname = loginNicknameEl.value.trim();
           const pass     = normalizePin(loginPassEl.value);
@@ -310,17 +308,13 @@
               const msg = (err && err.message) ? err.message : 'ログインに失敗しました。';
               setMessage(msg, true);
             })
-            // mode, nickname, fullName, fullNameKana, password
             .createSession('login', nickname, '', '', pass);
         }
 
-        // ▼ 新規登録（本名＋ふりがな＋ニックネーム＋4ケタ）
         function onRegister(){
-          // 入力値をいったん整形
           const fullNameNorm     = normalizeNameWithSpace(regFullNameEl.value);
           const fullNameKanaNorm = normalizeNameWithSpace(regFullNameKanaEl.value);
 
-          // 整形した文字列を入力欄にも反映（子どもが目で確認できるように）
           regFullNameEl.value     = fullNameNorm;
           regFullNameKanaEl.value = fullNameKanaNorm;
 
@@ -335,13 +329,11 @@
             return;
           }
 
-          // 名字と名前のあいだのスペースチェック（本名）
           if (!fullName.includes(' ')){
             setMessage('本名は「名字 と なまえ」のあいだに すきまを１つあけてね。例）田中 颯太', true);
             return;
           }
 
-          // 名字と名前のあいだのスペースチェック（ふりがな）
           if (!fullNameKana.includes(' ')){
             setMessage('ふりがなは「みょうじ と なまえ」のあいだに すきまを１つあけてね。例）たなか そうた', true);
             return;
@@ -377,17 +369,40 @@
               const msg = (err && err.message) ? err.message : '新規登録に失敗しました。';
               setMessage(msg, true);
             })
-            // ★ Code.gs: createSession('register', nickname, fullName, fullNameKana, pass)
             .createSession('register', nickname, fullName, fullNameKana, pass);
         }
 
-        // ▼ イベント設定
         if (btnLogin)     btnLogin.addEventListener('click', onLogin);
         if (btnShowReg)   btnShowReg.addEventListener('click', showRegisterView);
         if (btnRegister)  btnRegister.addEventListener('click', onRegister);
         if (btnBackLogin) btnBackLogin.addEventListener('click', showLoginView);
 
-        // Enterキーの動き
+        // ✅追加：教師ログイン（白画面防止で必ず /exec に乗せる）
+        if (teacherLoginBtn) {
+          teacherLoginBtn.addEventListener('click', () => {
+            const cached = sessionStorage.getItem('go_execBaseUrl');
+
+            const go = (base) => {
+              const b = String(base || '').split('?')[0];
+              if (b.includes('/exec')) sessionStorage.setItem('go_execBaseUrl', b);
+              window.top.location.href = `${b}?page=teacher_login`;
+            };
+
+            if (cached && cached.includes('/exec')) {
+              go(cached);
+              return;
+            }
+
+            google.script.run
+              .withSuccessHandler(go)
+              .withFailureHandler(() => {
+                const b = location.href.split('?')[0];
+                window.top.location.href = `${b}?page=teacher_login`;
+              })
+              .getExecBaseUrl();
+          });
+        }
+
         loginNicknameEl.addEventListener('keydown', e => {
           if (e.key === 'Enter') loginPassEl.focus();
         });
@@ -411,10 +426,8 @@
           if (e.key === 'Enter') onRegister();
         });
 
-        // 初期表示はログイン画面
         showLoginView();
       });
-      // ------- ここまで onload 内 -------
     </script>
   </body>
 </html>

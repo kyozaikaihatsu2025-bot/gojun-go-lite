@@ -1,71 +1,782 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <base target="_top"><meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>先生ダッシュボード</title>
-  <style>
-    body{font-family:system-ui,"Noto Sans JP",sans-serif;background:#fff7ed;color:#3b2a1a;margin:0;padding:24px}
-    .card{max-width:900px;margin:16px auto;padding:16px;border:2px solid #ffd7b8;border-radius:14px;background:#fff}
-    input,button{height:38px;border-radius:10px;border:2px solid #ffd7b8;padding:6px 10px}
-    button{background:linear-gradient(180deg,#ffb777,#ff914d);border-color:#ffb777;color:#3b2314;font-weight:800;cursor:pointer}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{border:1px solid #ffd7b8;padding:8px;text-align:left}
-    th{background:#fff1e6}
-    .muted{color:#8a6a4a}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>先生ダッシュボード</h1>
-    <div>
-      <label>PIN: <input id="pin" type="password" style="width:120px"></label>
-      <label>期間（日）: <input id="days" type="number" value="7" style="width:80px"></label>
-      <button id="load">読み込み</button>
-      <span id="msg" class="muted"></span>
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ | 先生ページ</title>
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c; --accent-100:#ffedd5;
+      }
+      *{ box-sizing:border-box; }
+      body{
+        margin:0;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+        background:linear-gradient(180deg,var(--bg),#fff);
+        color:var(--text);
+      }
+      header{
+        position:sticky; top:0; z-index:10;
+        background:rgba(255,255,255,.92);
+        backdrop-filter: blur(8px);
+        border-bottom:2px solid var(--border);
+        padding:12px 12px;
+      }
+      .bar{
+        display:flex; gap:8px; align-items:center; justify-content:space-between;
+        flex-wrap:wrap;
+      }
+      .title{
+        display:flex; gap:10px; align-items:baseline;
+      }
+      .title h1{ margin:0; font-size:18px; }
+      .title .muted{ color:var(--muted); font-size:12px; }
+      .tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+      .tab{
+        padding:10px 12px;
+        border:2px solid var(--border);
+        border-radius:14px;
+        background:#fff;
+        cursor:pointer;
+        font-size:14px;
+      }
+      .tab.active{ background:var(--accent-100); border-color:var(--accent); }
+      .btn{
+        padding:10px 12px;
+        border-radius:14px;
+        border:none;
+        background:var(--accent);
+        color:#fff;
+        cursor:pointer;
+        font-size:14px;
+      }
+      .btn.ghost{
+        background:#fff; color:var(--accent-600);
+        border:2px solid var(--border);
+      }
+      main{ padding:12px; max-width:1200px; margin:0 auto; }
+      .card{
+        background:var(--panel);
+        border:2px solid var(--border);
+        border-radius:18px;
+        padding:14px;
+        box-shadow:0 10px 24px rgba(0,0,0,.06);
+        margin-bottom:12px;
+      }
+      .grid{
+        display:grid;
+        grid-template-columns: 1fr;
+        gap:12px;
+      }
+      @media (min-width: 920px){
+        .grid.two{ grid-template-columns: 1fr 1fr; }
+      }
+
+      label{ display:block; font-size:13px; color:var(--muted); margin:8px 0 4px; }
+      input, textarea, select{
+        width:100%;
+        font-size:16px;
+        padding:10px 10px;
+        border:2px solid var(--border);
+        border-radius:14px;
+        outline:none;
+      }
+      input:focus, textarea:focus{ border-color:var(--accent); }
+
+      .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+      .row > *{ flex:1; min-width:140px; }
+
+      table{
+        width:100%;
+        border-collapse:separate;
+        border-spacing:0;
+        overflow:hidden;
+        border:2px solid var(--border);
+        border-radius:14px;
+        background:#fff;
+      }
+      th, td{
+        padding:10px 8px;
+        border-bottom:1px solid var(--border);
+        font-size:14px;
+        text-align:left;
+        vertical-align:top;
+      }
+      th{ background:var(--accent-100); }
+      tr:last-child td{ border-bottom:none; }
+      .small{ font-size:12px; color:var(--muted); }
+      .right{ text-align:right; }
+      .click{ cursor:pointer; }
+      .pill{
+        display:inline-block;
+        padding:4px 8px;
+        border-radius:999px;
+        border:1px solid var(--border);
+        background:#fff;
+        font-size:12px;
+        color:var(--muted);
+      }
+
+      /* modal */
+      .modal-back{
+        position:fixed; inset:0;
+        background:rgba(0,0,0,.35);
+        display:none;
+        align-items:center; justify-content:center;
+        padding:16px;
+        z-index:50;
+      }
+      .modal{
+        width:min(920px, 100%);
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:18px;
+        padding:14px;
+      }
+      .modal h2{ margin:0 0 6px; font-size:18px; }
+      .modal .actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+      .danger{ background:#ef4444; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="bar">
+        <div class="title">
+          <h1>先生ページ</h1>
+          <div class="muted" id="status">読み込み中…</div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="settings">設定</button>
+          <button class="tab" data-tab="dashboard">ダッシュボード</button>
+          <button class="tab" data-tab="students">生徒管理</button>
+        </div>
+
+        <div class="row" style="flex:0 0 auto; gap:8px;">
+          <button class="btn ghost" id="refreshBtn">更新</button>
+          <button class="btn ghost" id="logoutBtn">ログアウト</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 設定 -->
+      <section id="tab-settings">
+        <div class="grid two">
+          <div class="card">
+            <h2 style="margin:0 0 8px;">A. 音声スピード（TTS/音声）</h2>
+            <div class="row">
+              <div>
+                <label>通常（例：1.0）</label>
+                <input id="ttsNormal" type="number" step="0.1" />
+              </div>
+              <div>
+                <label>ゆっくり（例：0.5）</label>
+                <input id="ttsSlow" type="number" step="0.1" />
+              </div>
+            </div>
+            <div class="small">生徒ごとの上書きは「生徒詳細」でできます。</div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin:0 0 8px;">B. ボス解放コスト（unit別）</h2>
+            <div id="bossCostBox"></div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h2 style="margin:0 0 8px;">C. コイン付与ルール（mode別）</h2>
+            <div class="small">miss0/miss1/miss2/else を数字で。</div>
+            <div id="coinRulesBox"></div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin:0 0 8px;">D. スタンプ★閾値</h2>
+            <div class="row">
+              <div>
+                <label>★☆☆ になる回数</label>
+                <input id="star1" type="number" step="1" />
+              </div>
+              <div>
+                <label>★★☆ になる回数</label>
+                <input id="star2" type="number" step="1" />
+              </div>
+              <div>
+                <label>★★★ になる回数</label>
+                <input id="star3" type="number" step="1" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h2 style="margin:0 0 8px;">② 学習モードON/OFF</h2>
+            <div class="row" style="gap:10px;">
+              <label><input type="checkbox" id="toggleChallenge" /> チャレンジON</label>
+              <label><input type="checkbox" id="toggleBoss" /> ボスON</label>
+              <label><input type="checkbox" id="toggleStamp" /> スタンプON</label>
+            </div>
+            <div class="small">授業中の事故防止に効くやつ👍</div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin:0 0 8px;">③ 目標（unit別）</h2>
+            <div id="goalsBox"></div>
+            <div class="small">例：unit1はコイン20で合格、など</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 8px;">④ デバッグ/運用</h2>
+          <div class="row" style="gap:8px; align-items:flex-start;">
+            <button class="btn" id="saveSettingsBtn">設定を保存</button>
+            <button class="btn ghost" id="resetSettingsBtn">初期値に戻す</button>
+            <button class="btn ghost" id="exportBtn">JSONを書き出し</button>
+            <button class="btn ghost" id="importBtn">JSONを読み込み</button>
+          </div>
+          <label>JSON（バックアップ/復元）</label>
+          <textarea id="jsonArea" rows="6" placeholder="ここにJSONが出ます"></textarea>
+          <div class="small">※読み込みは「JSONを読み込み」を押すよ</div>
+        </div>
+      </section>
+
+      <!-- ダッシュボード -->
+      <section id="tab-dashboard" style="display:none;">
+        <div class="card">
+          <h2 style="margin:0 0 8px;">A. 一覧（生徒×unit）</h2>
+          <div class="small">生徒をクリックすると個別詳細が開きます。</div>
+          <div id="overviewTable"></div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 8px;">C. クラスの傾向</h2>
+          <div id="trendsBox"></div>
+        </div>
+      </section>
+
+      <!-- 生徒管理 -->
+      <section id="tab-students" style="display:none;">
+        <div class="card">
+          <h2 style="margin:0 0 8px;">① 生徒の管理</h2>
+          <div class="small">enabled / PWリセット / ふりがな修正</div>
+          <div id="studentsTable"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- modal -->
+    <div class="modal-back" id="modalBack">
+      <div class="modal">
+        <h2 id="modalTitle">生徒詳細</h2>
+        <div id="modalBody" class="small">読み込み中…</div>
+        <div class="actions">
+          <button class="btn ghost" id="modalClose">閉じる</button>
+        </div>
+      </div>
     </div>
-    <div id="tableWrap"></div>
-  </div>
 
-  <script>
-    const $ = (id)=>document.getElementById(id);
-    $('load').addEventListener('click', ()=>{
-      $('msg').textContent = '確認中…';
-      google.script.run.withSuccessHandler(({ok})=>{
-        if(!ok){ $('msg').textContent='PINが違います'; return; }
-        $('msg').textContent='読込中…';
-        google.script.run.withSuccessHandler((rows)=>{
-          $('msg').textContent='';
-          render(rows);
-        }).withFailureHandler(err=>{
-          $('msg').textContent='読み込みエラー: '+((err&&err.message)||err);
-        }).listSummary(Number($('days').value||7));
-      }).withFailureHandler(err=>{
-        $('msg').textContent='PIN確認エラー: '+((err&&err.message)||err);
-      }).verifyTeacher($('pin').value);
-    });
+    <script>
+      const $ = (id) => document.getElementById(id);
 
-    function render(rows){
-      const w=$('tableWrap');
-      if(!rows || !rows.length){ w.innerHTML='<p class="muted">データがありません</p>'; return; }
-      const html = [
-        '<table><thead><tr>',
-        '<th>student_id</th><th>name</th><th>Attempts</th><th>Correct</th><th>Accuracy</th><th>Avg_ms</th><th>Last</th>',
-        '</tr></thead><tbody>',
-        ...rows.map(r=>`<tr>
-          <td>${escapeHTML(r.student_id||'')}</td>
-          <td>${escapeHTML(r.name||'')}</td>
-          <td>${r.attempts||0}</td>
-          <td>${r.correct||0}</td>
-          <td>${r.attempts? ((r.correct/r.attempts*100).toFixed(1)+'%'):'-'}</td>
-          <td>${r.avg_ms||0}</td>
-          <td>${new Date(r.last).toLocaleString()}</td>
-        </tr>`),
-        '</tbody></table>'
-      ].join('');
-      w.innerHTML = html;
-    }
-    function escapeHTML(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  </script>
-</body>
+      const state = {
+        baseUrl: '',
+        adminKey: '',
+        settings: null,
+        students: [],
+      };
+
+      const getParam = (k) => new URLSearchParams(location.search).get(k);
+
+      const setStatus = (t) => { $('status').textContent = t; };
+
+      const call = (fn, ...args) => new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)[fn](...args);
+      });
+
+      const ensureBaseUrl = async () => {
+        const cached = sessionStorage.getItem('go_execBaseUrl');
+        if (cached && cached.includes('/exec')) {
+          state.baseUrl = cached;
+          return cached;
+        }
+        const base = await call('getExecBaseUrl');
+        const b = String(base || '').split('?')[0];
+        sessionStorage.setItem('go_execBaseUrl', b);
+        state.baseUrl = b;
+        return b;
+      };
+
+      const ensureAdminKey = async () => {
+        const k = getParam('k') || sessionStorage.getItem('go_teacherKey') || '';
+        state.adminKey = k;
+
+        if (!k) {
+          await ensureBaseUrl();
+          window.top.location.href = `${state.baseUrl}?page=teacher_login`;
+          return false;
+        }
+        // アドレスバーにも k を揃える（復帰しやすい）
+        sessionStorage.setItem('go_teacherKey', k);
+        return true;
+      };
+
+      const switchTab = (tab) => {
+        document.querySelectorAll('.tab').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+        $('tab-settings').style.display = tab === 'settings' ? '' : 'none';
+        $('tab-dashboard').style.display = tab === 'dashboard' ? '' : 'none';
+        $('tab-students').style.display = tab === 'students' ? '' : 'none';
+      };
+
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      const renderUnitInputs = (boxEl, mapObj, idPrefix) => {
+        const units = Object.keys(mapObj || {}).sort((a,b)=>Number(a)-Number(b));
+        boxEl.innerHTML = `
+          <table>
+            <thead><tr><th>unit</th><th class="right">値</th></tr></thead>
+            <tbody>
+              ${units.map(u => `
+                <tr>
+                  <td>Unit ${u}</td>
+                  <td class="right">
+                    <input id="${idPrefix}${u}" type="number" step="1" value="${mapObj[u]}" />
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      };
+
+      const renderCoinRules = (boxEl, rules) => {
+        const modes = Object.keys(rules || {});
+        boxEl.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>mode</th>
+                <th class="right">miss0</th>
+                <th class="right">miss1</th>
+                <th class="right">miss2</th>
+                <th class="right">else</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${modes.map(m => `
+                <tr>
+                  <td><span class="pill">${m}</span></td>
+                  <td class="right"><input id="cr_${m}_0" type="number" step="1" value="${rules[m].miss0}" /></td>
+                  <td class="right"><input id="cr_${m}_1" type="number" step="1" value="${rules[m].miss1}" /></td>
+                  <td class="right"><input id="cr_${m}_2" type="number" step="1" value="${rules[m].miss2}" /></td>
+                  <td class="right"><input id="cr_${m}_e" type="number" step="1" value="${rules[m].else}" /></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      };
+
+      const loadAll = async () => {
+        setStatus('読み込み中…');
+        await ensureBaseUrl();
+        const ok = await ensureAdminKey();
+        if (!ok) return;
+
+        try {
+          const [settings, students, trends] = await Promise.all([
+            call('teacherGetSettings', state.adminKey),
+            call('teacherListStudents', state.adminKey),
+            call('teacherGetClassTrends', state.adminKey),
+          ]);
+
+          state.settings = settings;
+          state.students = students;
+
+          setStatus('OK');
+
+          // settings画面へ反映
+          $('ttsNormal').value = settings.tts.normal;
+          $('ttsSlow').value = settings.tts.slow;
+
+          renderUnitInputs($('bossCostBox'), settings.bossCostByUnit, 'bossCost_u');
+          renderUnitInputs($('goalsBox'), settings.goalsByUnit, 'goal_u');
+          renderCoinRules($('coinRulesBox'), settings.coinRulesByMode);
+
+          $('star1').value = settings.stampThresholds.star1;
+          $('star2').value = settings.stampThresholds.star2;
+          $('star3').value = settings.stampThresholds.star3;
+
+          $('toggleChallenge').checked = !!settings.featureToggles.challenge;
+          $('toggleBoss').checked = !!settings.featureToggles.boss;
+          $('toggleStamp').checked = !!settings.featureToggles.stamp;
+
+          // dashboard
+          renderOverviewTable(students);
+          renderTrends(trends);
+
+          // students管理
+          renderStudentsManage(students);
+
+        } catch (e) {
+          setStatus(`エラー：${e?.message || e}`);
+          // admin切れの時はログインへ
+          if (String(e?.message || e).includes('期限')) {
+            sessionStorage.removeItem('go_teacherKey');
+            window.top.location.href = `${state.baseUrl}?page=teacher_login`;
+          }
+        }
+      };
+
+      const collectSettingsFromUI = () => {
+        const s = JSON.parse(JSON.stringify(state.settings || {}));
+
+        s.tts.normal = Number($('ttsNormal').value);
+        s.tts.slow = Number($('ttsSlow').value);
+
+        // bossCostByUnit
+        for (const u of Object.keys(s.bossCostByUnit || {})) {
+          const el = document.getElementById(`bossCost_u${u}`);
+          if (el) s.bossCostByUnit[u] = Number(el.value);
+        }
+
+        // goalsByUnit
+        for (const u of Object.keys(s.goalsByUnit || {})) {
+          const el = document.getElementById(`goal_u${u}`);
+          if (el) s.goalsByUnit[u] = Number(el.value);
+        }
+
+        // coinRulesByMode
+        for (const m of Object.keys(s.coinRulesByMode || {})) {
+          const r = s.coinRulesByMode[m];
+          r.miss0 = Number(document.getElementById(`cr_${m}_0`)?.value ?? r.miss0);
+          r.miss1 = Number(document.getElementById(`cr_${m}_1`)?.value ?? r.miss1);
+          r.miss2 = Number(document.getElementById(`cr_${m}_2`)?.value ?? r.miss2);
+          r.else  = Number(document.getElementById(`cr_${m}_e`)?.value ?? r.else);
+        }
+
+        s.stampThresholds.star1 = Number($('star1').value);
+        s.stampThresholds.star2 = Number($('star2').value);
+        s.stampThresholds.star3 = Number($('star3').value);
+
+        s.featureToggles.challenge = $('toggleChallenge').checked;
+        s.featureToggles.boss = $('toggleBoss').checked;
+        s.featureToggles.stamp = $('toggleStamp').checked;
+
+        return s;
+      };
+
+      $('saveSettingsBtn').addEventListener('click', async () => {
+        try {
+          setStatus('保存中…');
+          const s = collectSettingsFromUI();
+          const res = await call('teacherSaveSettings', state.adminKey, s);
+          state.settings = res.settings;
+          $('jsonArea').value = JSON.stringify(res.settings, null, 2);
+          setStatus('保存OK 👍');
+        } catch (e) {
+          setStatus(`保存エラー：${e?.message || e}`);
+        }
+      });
+
+      $('resetSettingsBtn').addEventListener('click', async () => {
+        try {
+          setStatus('初期化中…');
+          const res = await call('teacherResetSettings', state.adminKey);
+          state.settings = res.settings;
+          $('jsonArea').value = JSON.stringify(res.settings, null, 2);
+          setStatus('初期値に戻したよ');
+          await loadAll();
+        } catch (e) {
+          setStatus(`初期化エラー：${e?.message || e}`);
+        }
+      });
+
+      $('exportBtn').addEventListener('click', () => {
+        $('jsonArea').value = JSON.stringify(state.settings || {}, null, 2);
+        setStatus('JSONを書き出したよ');
+      });
+
+      $('importBtn').addEventListener('click', async () => {
+        try {
+          const text = $('jsonArea').value || '';
+          const obj = JSON.parse(text);
+          setStatus('読み込み中…');
+          const res = await call('teacherSaveSettings', state.adminKey, obj);
+          state.settings = res.settings;
+          setStatus('読み込みOK');
+          await loadAll();
+        } catch (e) {
+          setStatus(`読み込みエラー：${e?.message || e}`);
+        }
+      });
+
+      $('refreshBtn').addEventListener('click', loadAll);
+
+      $('logoutBtn').addEventListener('click', async () => {
+        try { await call('teacherLogout', state.adminKey); } catch (e) {}
+        sessionStorage.removeItem('go_teacherKey');
+        await ensureBaseUrl();
+        window.top.location.href = `${state.baseUrl}?page=teacher_login`;
+      });
+
+      // --- ダッシュボード表示 ---
+      const renderOverviewTable = (students) => {
+        // unit数は最初の生徒の coinsByUnit から推測
+        const units = students?.[0] ? Object.keys(students[0].coinsByUnit || {}).map(Number).sort((a,b)=>a-b) : [1,2,3,4,5,6,7,8];
+
+        const html = `
+          <table>
+            <thead>
+              <tr>
+                <th>生徒</th>
+                ${units.map(u => `<th class="right">U${u} coin</th>`).join('')}
+                ${units.map(u => `<th class="right">U${u} unlock</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(s => `
+                <tr class="click" data-student="${s.studentId}">
+                  <td>
+                    <div><b>${escapeHtml(s.name || s.studentId)}</b></div>
+                    <div class="small">${escapeHtml(s.kana || '')} ${s.enabled ? '' : '（OFF）'}</div>
+                  </td>
+                  ${units.map(u => `<td class="right">${Number(s.coinsByUnit?.[u] || 0)}</td>`).join('')}
+                  ${units.map(u => `<td class="right">${s.unlockByUnit?.[u] ? '✅' : '—'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        $('overviewTable').innerHTML = html;
+
+        $('overviewTable').querySelectorAll('tr[data-student]').forEach(tr => {
+          tr.addEventListener('click', () => openStudentDetail(tr.dataset.student));
+        });
+      };
+
+      const renderTrends = (tr) => {
+        const units = Object.keys(tr.avgCoinsByUnit || {}).map(Number).sort((a,b)=>a-b);
+        $('trendsBox').innerHTML = `
+          <div class="grid two">
+            <div class="card" style="margin:0;">
+              <h3 style="margin:0 0 6px;">unit別 平均コイン</h3>
+              <table>
+                <thead><tr><th>unit</th><th class="right">平均</th></tr></thead>
+                <tbody>
+                  ${units.map(u => `<tr><td>U${u}</td><td class="right">${tr.avgCoinsByUnit[u]}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="card" style="margin:0;">
+              <h3 style="margin:0 0 6px;">unit別 平均正答率</h3>
+              <table>
+                <thead><tr><th>unit</th><th class="right">%</th></tr></thead>
+                <tbody>
+                  ${units.map(u => `<tr><td>U${u}</td><td class="right">${tr.avgAccuracyByUnit[u]}%</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3 style="margin:0 0 6px;">みんながつまずいてる問題 TOP10（直近30日・不正解）</h3>
+            <table>
+              <thead><tr><th>item_id</th><th class="right">不正解回数</th></tr></thead>
+              <tbody>
+                ${(tr.topWrongItems || []).map(x => `<tr><td>${escapeHtml(x.itemId)}</td><td class="right">${x.wrongCount}</td></tr>`).join('') || '<tr><td colspan="2">データなし</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `;
+      };
+
+      // --- 生徒管理 ---
+      const renderStudentsManage = (students) => {
+        $('studentsTable').innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>生徒</th>
+                <th class="right">enabled</th>
+                <th>PWリセット</th>
+                <th>ふりがな修正</th>
+                <th>保存</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(s => `
+                <tr data-student="${s.studentId}">
+                  <td>
+                    <div><b>${escapeHtml(s.name || s.studentId)}</b></div>
+                    <div class="small">${escapeHtml(s.studentId)}</div>
+                  </td>
+                  <td class="right">
+                    <input type="checkbox" class="en" ${s.enabled ? 'checked' : ''} />
+                  </td>
+                  <td>
+                    <input class="pw" inputmode="numeric" placeholder="数字4ケタ" />
+                  </td>
+                  <td>
+                    <input class="kana" placeholder="例：やまだ たろう" value="${escapeAttr(s.kana || '')}" />
+                  </td>
+                  <td>
+                    <button class="btn ghost saveBtn" type="button">保存</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        $('studentsTable').querySelectorAll('.saveBtn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const tr = e.target.closest('tr[data-student]');
+            const studentId = tr.dataset.student;
+            const enabled = tr.querySelector('.en').checked;
+            const pwRaw = tr.querySelector('.pw').value || '';
+            const kana = tr.querySelector('.kana').value || '';
+
+            const patch = { studentId, enabled, full_name_kana: kana };
+            if (pwRaw.trim()) patch.login_pass = pwRaw;
+
+            try {
+              setStatus('保存中…');
+              await call('teacherUpdateStudent', state.adminKey, patch);
+              setStatus('保存OK');
+              await loadAll();
+            } catch (err) {
+              setStatus(`保存エラー：${err?.message || err}`);
+            }
+          });
+        });
+      };
+
+      // --- 生徒詳細（モーダル） ---
+      const openStudentDetail = async (studentId) => {
+        $('modalBack').style.display = 'flex';
+        $('modalTitle').textContent = `生徒詳細：${studentId}`;
+        $('modalBody').textContent = '読み込み中…';
+
+        try {
+          const detail = await call('teacherGetStudentDetail', state.adminKey, studentId);
+          const s = state.settings || {};
+          const base = s.tts || { normal: 1.0, slow: 0.5 };
+          const ov = (s.ttsOverridesByStudentId && s.ttsOverridesByStudentId[studentId]) ? s.ttsOverridesByStudentId[studentId] : null;
+          const cur = ov || base;
+
+          const units = Object.keys(detail.byUnit || {}).map(Number).sort((a,b)=>a-b);
+
+          $('modalBody').innerHTML = `
+            <div class="card" style="margin:0 0 12px;">
+              <h3 style="margin:0 0 6px;">音声スピード（この子だけ上書き）</h3>
+              <div class="row">
+                <div>
+                  <label>通常</label>
+                  <input id="ovN" type="number" step="0.1" value="${cur.normal}">
+                </div>
+                <div>
+                  <label>ゆっくり</label>
+                  <input id="ovS" type="number" step="0.1" value="${cur.slow}">
+                </div>
+                <div style="flex:0 0 180px; min-width:180px;">
+                  <label>&nbsp;</label>
+                  <button class="btn" id="saveOv">上書きを保存</button>
+                </div>
+              </div>
+              <div class="small">上書きをやめたい時は、通常=1.0/ゆっくり=0.5 に戻して保存でOK</div>
+            </div>
+
+            <div class="card" style="margin:0 0 12px;">
+              <h3 style="margin:0 0 6px;">unit別</h3>
+              <table>
+                <thead>
+                  <tr><th>unit</th><th class="right">回数</th><th class="right">正解</th><th class="right">不正解</th><th class="right">正答率</th></tr>
+                </thead>
+                <tbody>
+                  ${units.map(u => {
+                    const x = detail.byUnit[u];
+                    const rate = x.attempts ? Math.round((x.correct / x.attempts) * 1000) / 10 : 0;
+                    return `<tr>
+                      <td>U${u}</td>
+                      <td class="right">${x.attempts}</td>
+                      <td class="right">${x.correct}</td>
+                      <td class="right">${x.wrong}</td>
+                      <td class="right">${rate}%</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid two">
+              <div class="card" style="margin:0;">
+                <h3 style="margin:0 0 6px;">モード別 回数</h3>
+                <table>
+                  <thead><tr><th>mode</th><th class="right">回数</th></tr></thead>
+                  <tbody>
+                    ${Object.keys(detail.byMode || {}).sort().map(m => `
+                      <tr><td><span class="pill">${escapeHtml(m)}</span></td><td class="right">${detail.byMode[m]}</td></tr>
+                    `).join('') || '<tr><td colspan="2">データなし</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card" style="margin:0;">
+                <h3 style="margin:0 0 6px;">つまずきTOP10（累計・不正解）</h3>
+                <table>
+                  <thead><tr><th>item_id</th><th class="right">不正解回数</th></tr></thead>
+                  <tbody>
+                    ${(detail.topWrongItems || []).map(x => `
+                      <tr><td>${escapeHtml(x.itemId)}</td><td class="right">${x.wrongCount}</td></tr>
+                    `).join('') || '<tr><td colspan="2">データなし</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+
+          $('saveOv').addEventListener('click', async () => {
+            try {
+              setStatus('保存中…');
+              const n = Number(document.getElementById('ovN').value);
+              const sl = Number(document.getElementById('ovS').value);
+              await call('teacherSaveStudentTtsOverride', state.adminKey, studentId, n, sl);
+              setStatus('保存OK');
+              await loadAll();
+            } catch (e) {
+              setStatus(`保存エラー：${e?.message || e}`);
+            }
+          });
+
+        } catch (e) {
+          $('modalBody').textContent = `エラー：${e?.message || e}`;
+        }
+      };
+
+      $('modalClose').addEventListener('click', () => $('modalBack').style.display = 'none');
+      $('modalBack').addEventListener('click', (e) => {
+        if (e.target === $('modalBack')) $('modalBack').style.display = 'none';
+      });
+
+      const escapeHtml = (s) => String(s ?? '')
+        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'","&#39;");
+      const escapeAttr = (s) => escapeHtml(s);
+
+      // 起動
+      loadAll();
+    </script>
+  </body>
 </html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>語順でGO！ | 教師ログイン</title>
+    <style>
+      :root{
+        --bg:#fff7ed; --panel:#fff1e6; --border:#ffd7b8;
+        --text:#3b2a1a; --muted:#8a6a4a;
+        --accent:#f97316; --accent-600:#ea580c;
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; margin:0; }
+      body{
+        display:flex; align-items:center; justify-content:center;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+        background:linear-gradient(180deg,var(--bg),#fff);
+        color:var(--text);
+        padding:16px;
+      }
+      .card{
+        width:min(520px, 100%);
+        background:#fff;
+        border:2px solid var(--border);
+        border-radius:18px;
+        padding:18px;
+        box-shadow:0 10px 24px rgba(0,0,0,.08);
+      }
+      h1{ margin:0 0 10px; font-size:20px; }
+      .muted{ color:var(--muted); font-size:14px; }
+      .row{ margin-top:14px; }
+      input{
+        width:100%;
+        font-size:18px;
+        padding:14px 12px;
+        border:2px solid var(--border);
+        border-radius:14px;
+        outline:none;
+      }
+      input:focus{ border-color:var(--accent); }
+      button{
+        width:100%;
+        margin-top:12px;
+        padding:14px 12px;
+        font-size:18px;
+        border:none;
+        border-radius:14px;
+        background:var(--accent);
+        color:#fff;
+        cursor:pointer;
+      }
+      button:disabled{ opacity:.6; cursor:not-allowed; }
+      .msg{ margin-top:10px; font-size:15px; min-height:22px; }
+      .top-actions{
+        display:flex; gap:8px; margin-top:10px;
+      }
+      .ghost{
+        background:#fff; color:var(--accent-600);
+        border:2px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>教師ログイン</h1>
+      <div class="muted">PIN（数字4ケタ）を入れてね 👩‍🏫</div>
+
+      <div class="row">
+        <input id="pin" inputmode="numeric" autocomplete="one-time-code" placeholder="例：8478" />
+        <button id="loginBtn">ログイン</button>
+
+        <div class="top-actions">
+          <button id="backBtn" class="ghost" type="button">もどる（トップ）</button>
+        </div>
+
+        <div id="msg" class="msg muted"></div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      const msg = (t) => { $('msg').textContent = t || ''; };
+
+      const setBusy = (b) => {
+        $('loginBtn').disabled = b;
+        $('pin').disabled = b;
+      };
+
+      const goTop = async () => {
+        const base = await getBaseUrl();
+        // doGetのデフォルト（loginへ）に戻す
+        window.top.location.href = base;
+      };
+
+      const getBaseUrl = () => new Promise((resolve) => {
+        const cached = sessionStorage.getItem('go_execBaseUrl');
+        if (cached && cached.includes('/exec')) return resolve(cached);
+
+        google.script.run
+          .withSuccessHandler((baseUrl) => {
+            const base = String(baseUrl || '').split('?')[0];
+            if (base.includes('/exec')) sessionStorage.setItem('go_execBaseUrl', base);
+            resolve(base);
+          })
+          .withFailureHandler(() => resolve(location.href.split('?')[0]))
+          .getExecBaseUrl();
+      });
+
+      $('backBtn').addEventListener('click', goTop);
+
+      $('loginBtn').addEventListener('click', async () => {
+        setBusy(true);
+        msg('確認中…');
+
+        const raw = $('pin').value || '';
+        const pin = raw.replace(/[^\d]/g, '');
+
+        google.script.run
+          .withSuccessHandler(async (res) => {
+            if (!res || !res.ok) {
+              msg(res?.message || 'ログイン失敗');
+              setBusy(false);
+              return;
+            }
+            const base = String(res.baseUrl || '').split('?')[0] || await getBaseUrl();
+
+            sessionStorage.setItem('go_execBaseUrl', base);
+            sessionStorage.setItem('go_teacherKey', res.adminKey);
+
+            // admin=1 を付けて teacher を開く（/exec のアドレスバー表示を守る）
+            window.top.location.href = `${base}?admin=1&k=${encodeURIComponent(res.adminKey)}`;
+          })
+          .withFailureHandler((e) => {
+            msg(`エラー：${e?.message || e}`);
+            setBusy(false);
+          })
+          .teacherVerify(pin);
+      });
+
+      // EnterでもOK
+      $('pin').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') $('loginBtn').click();
+      });
+
+      // /exec を握る（白画面予防）
+      (async () => { await getBaseUrl(); })();
+    </script>
+  </body>
+</html>

@@ -32,6 +32,13 @@ function doGet(e) {
     return serveBossImage_(unit);
   }
 
+  // ✅【追加】先生ログインページ（admin=1なしで入れる）
+  // 例: .../exec?page=teacher_login
+  if (p.page === 'teacher_login') {
+    return HtmlService.createHtmlOutputFromFile('teacher_login')
+      .setTitle('語順でGO！ | 教師ログイン');
+  }
+
   // 先生ダッシュボード（既存どおり）
   if (p.admin === '1') {
     return HtmlService.createHtmlOutputFromFile('teacher')
@@ -99,6 +106,11 @@ function doGet(e) {
 
 function include(name) {
   return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
+
+// ✅【追加】白画面防止：/exec のURLをJS側に返す
+function getExecBaseUrl() {
+  return ScriptApp.getService().getUrl();
 }
 
 // ---------- Helpers ----------
@@ -460,8 +472,6 @@ function isChallengeUnlocked(token, unit) {
 
 // --------------------
 // ★【追加】Home 用API：coinsByUnit / unlockByUnit をまとめて返す
-//  - Home.html の google.script.run.getHomeStatus(token) 用
-//  - 既存のリンク/挙動は壊さない（新規追加だけ）
 // --------------------
 function getHomeStatus(token) {
   const stu = getStudentByToken(token);
@@ -475,14 +485,12 @@ function getHomeStatus(token) {
       ['nickname', 'full_name', 'full_name_kana', 'first_name_en', 'login_pass', 'enabled']
     );
 
-    // 列を保証（無ければヘッダー追加）
     const head = stuSheet.getRange(1, 1, 1, stuSheet.getLastColumn()).getValues()[0] || [];
     const { coinIdxByUnit, unlockIdxByUnit } = _ensureStudentsCoinsAndUnlockColumns_(stuSheet, head);
 
     const found = _findStudentRowByIdOrThrow_(stuSheet, head, stu.student_id);
     const rowIndex = found.rowIndex;
 
-    // 追加列ぶんまで含めて読み直し
     const row = stuSheet.getRange(rowIndex, 1, 1, head.length).getValues()[0] || [];
 
     const coinsByUnit = {};
@@ -497,7 +505,6 @@ function getHomeStatus(token) {
       unlockByUnit[u] = unlocked;
     }
 
-    // 名前情報もついでに返す（Home 側の表示/将来拡張の保険）
     const detail = _getStudentDetailByToken_(token) || {};
 
     return {
@@ -660,7 +667,6 @@ function createSession(mode, studentId, name, clazz, password) {
     firstNameEn:  ensureHeader_('first_name_en'),
     pass:         ensureHeader_('login_pass'),
     enabled:      ensureHeader_('enabled')
-    // ★ points は廃止（列も作らない）
   };
 
   if (!/^\d{4}$/.test(pass)) {
@@ -809,8 +815,6 @@ function getStudentByToken(token) {
     const row = values[r];
     if (row[tIdx] === token && (aIdx < 0 || String(row[aIdx]).toLowerCase() !== 'false')) {
       const sid = row[idIdx];
-
-      // ★ points廃止：必要なら students の行番号だけ返す（挙動を壊しにくい）
       const rowIndex = _getStudentRowIndexById_(sid);
 
       return {
@@ -850,9 +854,6 @@ function _getHeaderIndexMap_(header) {
 
 /**
  * ★修正（最小）：roles シートから id の行を拾って roles オブジェクトにする
- *  - id 列が無い / シートが無いなら null（既存挙動を壊さん）
- *  - ヘッダーは大小を無視して探す（Wh/wh など差に強くする）
- *  - id列がA列じゃなくてもOKにする
  */
 function _getRolesById_(sheetName, id) {
   const ws = sh(sheetName);
@@ -1242,16 +1243,9 @@ function listFocusSentences(token, unit) {
 }
 
 // ---------- Results ----------
-/**
- * recordResult(token, itemId, ok, timeMs, mode, unit, attemptCount)
- * ✅ポイント廃止：students への加算処理は削除
- * - results への保存（mode/unit含む）は今まで通り
- * - 引数は7個のまま受ける（既存フロントの呼び出しを壊さないため）
- */
 function recordResult(token, itemId, ok, timeMs, mode, unit, attemptCount) {
   const stu = getStudentByToken(token);
 
-  // ★ unit は「引数で来たもの」を優先（来てなければ items_db から取る）
   let unitVal = 1;
   const unitArg = Number(unit);
   if (Number.isFinite(unitArg) && unitArg > 0) {
